@@ -1,0 +1,18 @@
+spring:
+  config:
+    import: "optional:file:.env[.properties]"
+  jpa:
+    hibernate:
+      ddl-auto: update
+      properties:
+        hibernate:
+          format_sql: true
+          show-sql: true
+
+
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION_TIME}
+  expiration: ${JWT_EXPIRATION_TIME}
