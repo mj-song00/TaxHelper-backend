@@ -9,7 +9,11 @@ public enum ExceptionEnum {
             "서버에서 문제가 발생하였습니다."),
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "INVALID_INPUT_VALUE", "요청 값이 올바르지 않습니다."),
     DATA_INTEGRITY_VIOLATION(HttpStatus.BAD_REQUEST, "DATA_INTEGRITY_VIOLATION",
-            "데이터 처리 중 문제가 발생했습니다. 요청을 확인하고 다시 시도해주세요");
+            "데이터 처리 중 문제가 발생했습니다. 요청을 확인하고 다시 시도해주세요"),
+    USER_ALREADY_EXISTS(HttpStatus.CONFLICT, "USER_ALREADY_EXISTS", "이미 존재하는 사용자입니다."),
+    UNAUTHORIZED_USER(HttpStatus.UNAUTHORIZED, "UNAUTHORIZED_USER", "인증되지 않은 사용자입니다."),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "사용자를 찾을 수 없습니다."),
+    ALREADY_DELETED(HttpStatus.BAD_REQUEST, "ALREADY_DELETED", "탈퇴된 사용자입니다.");
 
     private final HttpStatus status;
     private final String errorCode;
