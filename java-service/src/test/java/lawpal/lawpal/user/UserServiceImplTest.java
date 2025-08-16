@@ -1,5 +1,6 @@
 package lawpal.lawpal.user;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -13,6 +14,7 @@ import lawpal.lawpal.domain.user.entity.User;
 import lawpal.lawpal.domain.user.enums.UserRole;
 import lawpal.lawpal.domain.user.repository.UserRepository;
 import lawpal.lawpal.domain.user.dto.request.SignupRequest;
+import lawpal.lawpal.domain.user.service.AuthService;
 import lawpal.lawpal.domain.user.service.UserServiceImpl;
 import lawpal.lawpal.domain.user.validation.UserValidation;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,6 +47,9 @@ public class UserServiceImplTest {
 
     @Mock
     private UserValidation userValidation;
+
+    @Mock
+    private AuthService authService;
 
     @Nested
     @DisplayName("회원가입")
@@ -322,6 +327,62 @@ public class UserServiceImplTest {
             });
 
             assertEquals(ExceptionEnum.NICKNAME_SAME_AS_OLD, exception.getExceptionEnum());
+        }
+    }
+
+    @Nested
+    @DisplayName("회원탈퇴")
+    class secession{
+        @Test
+        @DisplayName("회원탈퇴 - 성공")
+        void deleteUserSuccess() {
+            // Given
+            UUID userId = UUID.randomUUID();
+
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com", "tester", "encodedPassword", UserRole.USER);
+
+            String refreshToken = "sampleRefreshToken";
+            HttpServletResponse response = mock(HttpServletResponse.class);
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+
+            // When
+            userService.deleteUser(authUser, refreshToken, response);
+
+            // Then
+            verify(userRepository, times(1)).save(user);
+            assertNotNull(user.getDeletedAt());
+            verify(authService, times(1)).logout(refreshToken, response);
+        }
+
+        @Test
+        @DisplayName("회원탈퇴 실패 - 이미 탈퇴한 사용자")
+        void deleteUserFailureAlreadyDeletedUser() {
+            // Given
+            UUID userId = UUID.randomUUID();
+
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com", "tester", "encodedPassword", UserRole.USER);
+
+
+            user.updateDeletedAt(); // 이미 탈퇴한 사용자로 설정
+
+            String refreshToken = "sampleRefreshToken";
+            HttpServletResponse response = mock(HttpServletResponse.class);
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+            doThrow(new BaseException(ExceptionEnum.ALREADY_DELETED))
+                    .when(userValidation).validateUserNotDeleted(user);
+
+            // When & Then
+            BaseException exception = assertThrows(BaseException.class, () -> {
+                userService.deleteUser(authUser, refreshToken, response);
+            });
+
+            assertEquals(ExceptionEnum.ALREADY_DELETED, exception.getExceptionEnum());
         }
     }
 
