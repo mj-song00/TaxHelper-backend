@@ -4,7 +4,8 @@ import lombok.Getter;
 
 @Getter
 public enum ApiResponseEnum {
-    SIGNUP_SUCCESS("회원가입 완료");
+    SIGNUP_SUCCESS("회원가입 완료"),
+    PASSWORD_CHANGED_SUCCESS("비밀번호 변경이 완료되었습니다.");
 
     private final String message;
 
