@@ -9,6 +9,7 @@ import lawpal.lawpal.common.response.ApiResponseEnum;
 import lawpal.lawpal.domain.user.dto.AuthUser;
 import lawpal.lawpal.domain.user.dto.request.ChangePasswordRequest;
 import lawpal.lawpal.domain.user.dto.request.SignupRequest;
+import lawpal.lawpal.domain.user.dto.response.UserProfileResponse;
 import lawpal.lawpal.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,4 +48,15 @@ public class UserController {
                 ApiResponse.successWithOutData(ApiResponseEnum.PASSWORD_CHANGED_SUCCESS);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "내 프로필 조회", description = "본인의 프로필을 조회합니다.")
+    @GetMapping("/me/profile")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserProfile(
+            @Auth AuthUser authUser) {
+        UserProfileResponse profile = userService.getUserProfile(authUser);
+        ApiResponse<UserProfileResponse> response =
+                ApiResponse.successWithData(profile, ApiResponseEnum.PROFILE_RETRIEVED_SUCCESS);
+        return ResponseEntity.ok(response);
+    }
+
 }

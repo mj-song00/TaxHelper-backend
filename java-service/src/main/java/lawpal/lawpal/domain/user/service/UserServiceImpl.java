@@ -4,6 +4,7 @@ import lawpal.lawpal.common.config.PasswordEncoder;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.user.dto.AuthUser;
+import lawpal.lawpal.domain.user.dto.response.UserProfileResponse;
 import lawpal.lawpal.domain.user.entity.User;
 import lawpal.lawpal.domain.user.enums.UserRole;
 import lawpal.lawpal.domain.user.repository.UserRepository;
@@ -80,6 +81,21 @@ public class UserServiceImpl implements UserService  {
         // 새 비밀번호로 업데이트
         user.updatePassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserProfileResponse getUserProfile(AuthUser authUser) {
+        // 인증된 사용자 확인
+        userValidation.validateAuthenticatedUser(authUser);
+
+        // 인증된 사용자의 ID로 사용자 조회
+        User user = userValidation.findUserById(authUser.getId());
+        // 사용자 탈퇴 여부 확인
+        userValidation.validateUserNotDeleted(user);
+
+        // 사용자 정보 반환
+        return UserProfileResponse.of(user);
     }
 
 }
