@@ -3,18 +3,18 @@ package lawpal.lawpal.domain.user.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lawpal.lawpal.common.annotation.Auth;
 import lawpal.lawpal.common.response.ApiResponse;
 import lawpal.lawpal.common.response.ApiResponseEnum;
+import lawpal.lawpal.domain.user.dto.AuthUser;
+import lawpal.lawpal.domain.user.dto.request.ChangePasswordRequest;
 import lawpal.lawpal.domain.user.dto.request.SignupRequest;
 import lawpal.lawpal.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User", description = "인증 API")
 @RestController
@@ -32,5 +32,19 @@ public class UserController {
         ApiResponse<Void> response =
                 ApiResponse.successWithOutData(ApiResponseEnum.SIGNUP_SUCCESS);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @Operation(summary = "비밀번호 변경", description = "본인의 비밀번호를 변경합니다.")
+    @PatchMapping("/me/password")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Auth AuthUser authUser,
+            @Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        userService.changePassword(
+                authUser,
+                changePasswordRequest.getOldPassword(),
+                changePasswordRequest.getNewPassword());
+        ApiResponse<Void> response =
+                ApiResponse.successWithOutData(ApiResponseEnum.PASSWORD_CHANGED_SUCCESS);
+        return ResponseEntity.ok(response);
     }
 }

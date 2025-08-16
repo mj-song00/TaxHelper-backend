@@ -3,10 +3,12 @@ package lawpal.lawpal.domain.user.service;
 import lawpal.lawpal.common.config.PasswordEncoder;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
+import lawpal.lawpal.domain.user.dto.AuthUser;
 import lawpal.lawpal.domain.user.entity.User;
 import lawpal.lawpal.domain.user.enums.UserRole;
 import lawpal.lawpal.domain.user.repository.UserRepository;
 import lawpal.lawpal.domain.user.dto.request.SignupRequest;
+import lawpal.lawpal.domain.user.validation.UserValidation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService  {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserValidation userValidation;
 
     @Transactional
     @Override
@@ -49,4 +52,34 @@ public class UserServiceImpl implements UserService  {
 
         userRepository.save(user);
     }
+
+    // 비밀번호 변경
+    @Transactional
+    @Override
+    public void changePassword(AuthUser authUser, String oldPassword, String newPassword) {
+
+        // 인증된 사용자 확인
+        userValidation.validateAuthenticatedUser(authUser);
+
+        // 인증된 사용자의 ID로 사용자 조회
+        User user = userValidation.findUserById(authUser.getId());
+
+        // 사용자 탈퇴 여부 확인
+        userValidation.validateUserNotDeleted(user);
+
+        // 현재 비밀번호 확인
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new BaseException(ExceptionEnum.PASSWORD_MISMATCH);
+        }
+
+        // 새 비밀번호가 기존 비밀번호와 동일한지 확인
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new BaseException(ExceptionEnum.PASSWORD_SAME_AS_OLD);
+        }
+
+        // 새 비밀번호로 업데이트
+        user.updatePassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
 }
