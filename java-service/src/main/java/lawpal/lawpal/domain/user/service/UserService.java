@@ -12,4 +12,6 @@ public interface UserService {
     void changePassword(AuthUser authUser,String oldPassword, String newPassword);
 
     UserProfileResponse getUserProfile(AuthUser authUser);
+
+    void changeNickName(AuthUser authUser,  String newNickName);
 }

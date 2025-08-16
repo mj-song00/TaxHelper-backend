@@ -98,4 +98,26 @@ public class UserServiceImpl implements UserService  {
         return UserProfileResponse.of(user);
     }
 
+    @Transactional
+    @Override
+    public void changeNickName(AuthUser authUser, String newNickName) {
+        // 인증된 사용자 확인
+        userValidation.validateAuthenticatedUser(authUser);
+
+        // 인증된 사용자의 ID로 사용자 조회
+        User user = userValidation.findUserById(authUser.getId());
+
+        // 사용자 탈퇴 여부 확인
+        userValidation.validateUserNotDeleted(user);
+
+        // 새로운 닉네임이 기존 닉네임과 동일한지 확인
+        if (user.getNickName().equals(newNickName)) {
+            throw new BaseException(ExceptionEnum.NICKNAME_SAME_AS_OLD);
+        }
+
+        // 닉네임 업데이트
+        user.updateNickName(newNickName);
+        userRepository.save(user);
+    }
+
 }

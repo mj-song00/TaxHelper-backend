@@ -7,6 +7,7 @@ import lawpal.lawpal.common.annotation.Auth;
 import lawpal.lawpal.common.response.ApiResponse;
 import lawpal.lawpal.common.response.ApiResponseEnum;
 import lawpal.lawpal.domain.user.dto.AuthUser;
+import lawpal.lawpal.domain.user.dto.request.ChangeNickNameRequest;
 import lawpal.lawpal.domain.user.dto.request.ChangePasswordRequest;
 import lawpal.lawpal.domain.user.dto.request.SignupRequest;
 import lawpal.lawpal.domain.user.dto.response.UserProfileResponse;
@@ -56,6 +57,18 @@ public class UserController {
         UserProfileResponse profile = userService.getUserProfile(authUser);
         ApiResponse<UserProfileResponse> response =
                 ApiResponse.successWithData(profile, ApiResponseEnum.PROFILE_RETRIEVED_SUCCESS);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "닉네임 변경", description = "본인의 닉네임을 변경합니다.")
+    @PatchMapping("/me/nickname")
+    public ResponseEntity<ApiResponse<Void>> changeNickName(
+            @Auth AuthUser authUser,
+            @Valid @RequestBody ChangeNickNameRequest changeNickNameRequest) {
+        userService.changeNickName(
+                authUser,
+                changeNickNameRequest.getNewNickName());
+        ApiResponse<Void> response = ApiResponse.successWithOutData(ApiResponseEnum.NICKNAME_CHANGED_SUCCESS);
         return ResponseEntity.ok(response);
     }
 
