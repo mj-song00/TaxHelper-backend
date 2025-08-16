@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -61,12 +62,36 @@ public class AuthService {
         return generateAccessToken(user);
     }
 
+    // 리프레시 토큰 쿠키 설정
+    public void setRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge((long) 7 * 24 * 60 * 60)
+                .sameSite("Strict")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
     // 사용자 탈퇴 여부 확인
     public void validateUserNotDeleted(User user) {
         if (user.getDeletedAt() != null) {
             throw new BaseException(ExceptionEnum.ALREADY_DELETED);
         }
     }
+
+    // 리프레시 토큰 생성
+    public String generateRefreshToken(String email) {
+        User user = findByEmail(email);
+        return jwtUtil.createRefreshToken(user.getId());
+    }
+
+    public void saveRefreshToken(String email, String refreshToken) {
+        String key = "refresh:" + email;
+        redisTemplate.opsForValue().set(key, refreshToken, 7, TimeUnit.DAYS);
+    }
+
 
     // 액세스 토큰 생성
     private String generateAccessToken(User user) {
