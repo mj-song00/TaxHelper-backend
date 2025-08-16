@@ -8,6 +8,7 @@ import lawpal.lawpal.common.config.PasswordEncoder;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.user.dto.AuthUser;
+import lawpal.lawpal.domain.user.dto.response.UserProfileResponse;
 import lawpal.lawpal.domain.user.entity.User;
 import lawpal.lawpal.domain.user.enums.UserRole;
 import lawpal.lawpal.domain.user.repository.UserRepository;
@@ -27,8 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -230,6 +230,49 @@ public class UserServiceImplTest {
             });
 
             assertEquals(ExceptionEnum.PASSWORD_MISMATCH, exception.getExceptionEnum());
+        }
+    }
+
+    @Nested
+    @DisplayName("사용자 조회")
+    class userInfo{
+        @Test
+        @DisplayName("사용자 프로필 조회 - 성공")
+        void getUserProfileSuccess(){
+            //given
+            UUID userId = UUID.randomUUID();
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com","tester","encodedPassword",UserRole.USER);
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+
+            //when
+            UserProfileResponse response = userService.getUserProfile(authUser);
+
+            //than
+            assertNotNull(response);
+            assertEquals(user.getId(), response.getId());
+            assertEquals(user.getEmail(), response.getEmail());
+            assertEquals(user.getNickName(), response.getNickName());
+        }
+
+        @Test
+        @DisplayName("사용자 프로필 조회 실패 - 인증되지 않은 사용자")
+        void getUserProfileFailureUnauthenticatedUser(){
+            //given
+            AuthUser authUser = null;
+
+            doThrow(new BaseException(ExceptionEnum.UNAUTHORIZED_USER))
+                    .when(userValidation).validateAuthenticatedUser(authUser);
+
+            //when
+            BaseException exception = assertThrows(BaseException.class, () -> {
+                userService.getUserProfile(authUser);
+            });
+
+            //than
+            assertEquals(ExceptionEnum.UNAUTHORIZED_USER, exception.getExceptionEnum());
         }
     }
 
