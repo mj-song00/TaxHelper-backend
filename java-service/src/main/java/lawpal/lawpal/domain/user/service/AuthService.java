@@ -2,10 +2,12 @@ package lawpal.lawpal.domain.user.service;
 
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lawpal.lawpal.common.config.PasswordEncoder;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.common.repository.RefreshTokenRepository;
+import lawpal.lawpal.domain.user.dto.request.LoginRequest;
 import lawpal.lawpal.domain.user.entity.User;
 import lawpal.lawpal.domain.user.repository.UserRepository;
 import lawpal.lawpal.jwt.JwtUtil;
@@ -52,6 +54,37 @@ public class AuthService {
         response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
     }
 
+    public String login(@Valid LoginRequest loginRequest) {
+        User user = findByEmail(loginRequest.getEmail());
+        validateUserNotDeleted(user);
+        authenticateUser(user, loginRequest.getPassword());
+        return generateAccessToken(user);
+    }
+
+    // 사용자 탈퇴 여부 확인
+    public void validateUserNotDeleted(User user) {
+        if (user.getDeletedAt() != null) {
+            throw new BaseException(ExceptionEnum.ALREADY_DELETED);
+        }
+    }
+
+    // 액세스 토큰 생성
+    private String generateAccessToken(User user) {
+        return jwtUtil.createToken(user.getId(), user.getUserRole());
+    }
+
+    // 비밀번호 인증
+    public void authenticateUser(User user, String rawPassword) {
+        if (!passwordEncoder.matches(rawPassword, user.getPassword())) {
+            throw new BaseException(ExceptionEnum.EMAIL_PASSWORD_MISMATCH);
+        }
+    }
+
+    // 이메일로 사용자 조회
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BaseException(ExceptionEnum.USER_NOT_FOUND));
+    }
 
     private User validateRefreshToken(String refreshToken) {
         if (refreshToken == null || refreshTokenRepository.isBlacklisted(refreshToken)
@@ -74,4 +107,5 @@ public class AuthService {
 
         return user;
     }
+
 }
