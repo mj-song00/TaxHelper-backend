@@ -276,4 +276,53 @@ public class UserServiceImplTest {
         }
     }
 
+    @Nested
+    @DisplayName("닉네임")
+    class nickname{
+        @Test
+        @DisplayName("닉네임 변경 - 성공")
+        void changeNickNameSuccess() {
+            // Given
+            UUID userId = UUID.randomUUID();
+
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com","tester","encodedOldPassword",UserRole.USER);
+
+
+            String newNickName = "NewNickName";
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+
+            // When
+            userService.changeNickName(authUser, newNickName);
+
+            // Then
+            verify(userRepository, times(1)).save(user);
+            assertEquals(newNickName, user.getNickName());
+        }
+
+        @Test
+        @DisplayName("닉네임 변경 실패 - 새로운 닉네임이 기존과 동일")
+        void changeNickNameFailureSameAsOldNickName() {
+            // Given
+            UUID userId = UUID.randomUUID();
+
+
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com","tester","encodedOldPassword",UserRole.USER);
+            String sameNickName = "tester";
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+
+            // When & Then
+            BaseException exception = assertThrows(BaseException.class, () -> {
+                userService.changeNickName(authUser, sameNickName);
+            });
+
+            assertEquals(ExceptionEnum.NICKNAME_SAME_AS_OLD, exception.getExceptionEnum());
+        }
+    }
+
 }
