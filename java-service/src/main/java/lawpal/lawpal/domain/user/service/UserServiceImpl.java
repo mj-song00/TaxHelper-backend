@@ -1,5 +1,6 @@
 package lawpal.lawpal.domain.user.service;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lawpal.lawpal.common.config.PasswordEncoder;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
@@ -24,6 +25,7 @@ public class UserServiceImpl implements UserService  {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserValidation userValidation;
+    private final AuthService authService;
 
     @Transactional
     @Override
@@ -120,4 +122,23 @@ public class UserServiceImpl implements UserService  {
         userRepository.save(user);
     }
 
+    @Transactional
+    @Override
+    public void deleteUser(AuthUser authenticatedUser, String refreshToken, HttpServletResponse response) {
+        // 인증된 사용자 확인
+        userValidation.validateAuthenticatedUser(authenticatedUser);
+
+        // 인증된 사용자의 ID로 사용자 조회
+        User user = userValidation.findUserById(authenticatedUser.getId());
+
+        // 사용자 탈퇴 여부 확인
+        userValidation.validateUserNotDeleted(user);
+
+        // 사용자 소프트 삭제 처리
+        user.updateDeletedAt();
+        userRepository.save(user);
+
+        // 로그아웃 처리 (리프레시 토큰 블랙리스트 및 쿠키 삭제)
+        authService.logout(refreshToken, response);
+    }
 }

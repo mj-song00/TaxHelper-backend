@@ -2,6 +2,7 @@ package lawpal.lawpal.domain.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lawpal.lawpal.common.annotation.Auth;
 import lawpal.lawpal.common.response.ApiResponse;
@@ -72,4 +73,15 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "회원 탈퇴", description = "본인의 계정을 탈퇴합니다.")
+    @PatchMapping("/me/delete")
+    public ResponseEntity<ApiResponse<Void>> deleteUser(
+            @Auth AuthUser authenticatedUser,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response) {
+        userService.deleteUser(authenticatedUser, refreshToken, response);
+        ApiResponse<Void> responseBody =
+                ApiResponse.successWithOutData(ApiResponseEnum.USER_DELETED_SUCCESS);
+        return ResponseEntity.ok(responseBody);
+    }
 }
