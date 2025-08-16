@@ -10,10 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Auth", description = "인가 API")
 @RestController
@@ -39,4 +36,16 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(accessToken);
     }
+
+
+    // 리프레시 토큰으로 액세스 토큰 재발급
+    @Operation(summary = "토큰 재발급", description = "리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급합니다.")
+    @PostMapping("/refresh-token")
+    public ResponseEntity<String> refreshToken(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken, HttpServletResponse response) {
+        String newAccessToken = authService.refreshAccessToken(refreshToken, response);
+        return ResponseEntity.ok(newAccessToken);
+    }
+
+
 }

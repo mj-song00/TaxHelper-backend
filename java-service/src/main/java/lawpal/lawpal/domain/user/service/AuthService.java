@@ -133,4 +133,23 @@ public class AuthService {
         return user;
     }
 
+    //AccessToken 재발급
+    @Transactional
+    public String refreshAccessToken(String refreshToken, HttpServletResponse response) {
+        User user = validateRefreshToken(refreshToken);
+        long expiration = jwtUtil.getRemainingExpiration(refreshToken);
+
+        try {
+            refreshTokenRepository.addBlacklist(refreshToken, expiration);
+
+            String newRefreshToken = generateRefreshToken(user.getEmail());
+            saveRefreshToken(user.getEmail(), newRefreshToken);
+            setRefreshTokenCookie(response, newRefreshToken);
+        } catch (Exception e) {
+            log.error("Redis 처리 실패", e);
+        }
+
+        return generateAccessToken(user);
+
+    }
 }
