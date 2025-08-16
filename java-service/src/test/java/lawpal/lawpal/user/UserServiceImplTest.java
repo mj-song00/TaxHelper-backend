@@ -7,7 +7,9 @@ import jakarta.validation.ValidatorFactory;
 import lawpal.lawpal.common.config.PasswordEncoder;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
+import lawpal.lawpal.domain.user.dto.AuthUser;
 import lawpal.lawpal.domain.user.entity.User;
+import lawpal.lawpal.domain.user.enums.UserRole;
 import lawpal.lawpal.domain.user.repository.UserRepository;
 import lawpal.lawpal.domain.user.dto.request.SignupRequest;
 import lawpal.lawpal.domain.user.service.UserServiceImpl;
@@ -23,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -177,4 +180,57 @@ public class UserServiceImplTest {
             assertEquals(ExceptionEnum.USER_ALREADY_EXISTS, exception.getExceptionEnum());
         }
     }
+
+    @Nested
+    @DisplayName("비밀번호 변경")
+    class password{
+        @Test
+        @DisplayName("비밀번호 변경 - 성공")
+        void changePasswordSuccess(){
+            //given
+            UUID userId = UUID.randomUUID();
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com","tester","encodedOldPassword",UserRole.USER);
+            String oldPassword = "oldPassword123!";
+            String newPassword = "newPassword456!";
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+            when(passwordEncoder.matches(oldPassword, user.getPassword())).thenReturn(true);
+            when(passwordEncoder.matches(newPassword, user.getPassword())).thenReturn(false);
+            when(passwordEncoder.encode(newPassword)).thenReturn("encodedNewPassword");
+
+            //when
+            userService.changePassword(authUser, oldPassword, newPassword);
+
+            //than
+            verify(userRepository, times(1)).save(user);
+            assertEquals("encodedNewPassword", user.getPassword());
+        }
+
+        @Test
+        @DisplayName("비밀번호 변경 실패 - 현재 비밀번호 불일치")
+        void changePasswordFailureIncorrectOldPassword() {
+            // Given
+            UUID userId = UUID.randomUUID();
+
+            AuthUser authUser = new AuthUser(userId, "test@test.com", UserRole.USER);
+
+            User user = new User("test@test.com","tester","encodedOldPassword",UserRole.USER);
+
+            String oldPassword = "wrongOldPassword";
+            String newPassword = "newPassword456!";
+
+            when(userValidation.findUserById(userId)).thenReturn(user);
+            when(passwordEncoder.matches(oldPassword, user.getPassword())).thenReturn(false);
+
+            // When & Then
+            BaseException exception = assertThrows(BaseException.class, () -> {
+                userService.changePassword(authUser, oldPassword, newPassword);
+            });
+
+            assertEquals(ExceptionEnum.PASSWORD_MISMATCH, exception.getExceptionEnum());
+        }
+    }
+
 }
