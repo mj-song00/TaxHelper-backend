@@ -1,2 +1,2 @@
 # lawpal-backend
-lawpal backend 
+texhelper backend
