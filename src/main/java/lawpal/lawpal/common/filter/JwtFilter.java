@@ -1,4 +1,4 @@
-package lawpal.lawpal.filter;
+package lawpal.lawpal.common.filter;
 
 
 import io.jsonwebtoken.Claims;
@@ -6,7 +6,7 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lawpal.lawpal.jwt.JwtUtil;
+import lawpal.lawpal.common.jwt.JwtUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

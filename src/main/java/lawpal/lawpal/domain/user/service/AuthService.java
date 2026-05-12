@@ -10,7 +10,7 @@ import lawpal.lawpal.common.repository.RefreshTokenRepository;
 import lawpal.lawpal.domain.user.dto.request.LoginRequest;
 import lawpal.lawpal.domain.user.entity.User;
 import lawpal.lawpal.domain.user.repository.UserRepository;
-import lawpal.lawpal.jwt.JwtUtil;
+import lawpal.lawpal.common.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
