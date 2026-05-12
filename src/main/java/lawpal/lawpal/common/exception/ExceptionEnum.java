@@ -21,7 +21,9 @@ public enum ExceptionEnum {
             "이메일 혹은 비밀번호가 일치하지 않습니다."),
 
     // 리프레시 토큰 관련
-    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "잘못된 리프레시 토큰입니다.");
+    INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "잘못된 리프레시 토큰입니다."),
+
+    API_CALL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR","API 호출에 실패하였습니다." );
 
     private final HttpStatus status;
     private final String errorCode;
