@@ -5,7 +5,6 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
-import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -16,14 +15,14 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI customOpenAPI() {
 
-        SecurityScheme securityScheme = new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT")
-                .in(SecurityScheme.In.HEADER)
-                .name("Authorization");
+//        SecurityScheme securityScheme = new SecurityScheme()
+//                .type(SecurityScheme.Type.HTTP)
+//                .scheme("bearer")
+//                .bearerFormat("JWT")
+//                .in(SecurityScheme.In.HEADER)
+//                .name("Authorization");
 
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList("BearerAuth");
+//        SecurityRequirement securityRequirement = new SecurityRequirement().addList("BearerAuth");
 
         return new OpenAPI()
                 .info(new Info()
@@ -59,10 +58,10 @@ public class SwaggerConfig {
                                 """)
                         .contact(new Contact()
                                 .name("mj-song Repository")
-                                .url("https://github.com/mj-song00/PortCoin.git")
+                                .url("https://github.com/mj-song00/TaxHelper-backend.git")
                         )
-                )
-                .addSecurityItem(securityRequirement)
-                .schemaRequirement("BearerAuth", securityScheme);
+                );
+//                .addSecurityItem(securityRequirement)
+//                .schemaRequirement("BearerAuth", securityScheme);
     }
 }
