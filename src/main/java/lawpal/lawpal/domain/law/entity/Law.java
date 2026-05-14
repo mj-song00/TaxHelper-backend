@@ -6,6 +6,8 @@ import lawpal.lawpal.domain.ministry.entity.Ministry;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 법령의 기본정보에 대한 table 입니다.
@@ -65,4 +67,7 @@ public class Law extends Timestamped {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ministries_id")
     private Ministry ministry;
+
+    @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LawSupplement> supplements = new ArrayList<>();
 }
