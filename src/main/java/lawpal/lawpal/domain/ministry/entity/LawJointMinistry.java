@@ -4,27 +4,27 @@ import jakarta.persistence.*;
 import lawpal.lawpal.common.entity.Timestamped;
 import lombok.*;
 
-/**
- * 소관 부처에 대한 table 입니다.
- * 현재 id, 부처명, 부처 코드에 대해 작성되어 있습니다.
- */
-@Entity
 @Getter
-@Table(name = "ministries")
+@Entity
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Ministry extends Timestamped {
+@Table(name = "law_join_ministry")
+public class LawJointMinistry extends Timestamped {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column
     private Long id;
 
-    @Column
+    /**
+     * 공동부령 부처명
+     */
+    @Column(nullable = false)
     private String ministryName;
 
-    @Column(nullable = false, unique = true)
+    /**
+     * 공동부령 부처코드
+     */
+    @Column(nullable = false)
     private String ministryCode;
-
 }
