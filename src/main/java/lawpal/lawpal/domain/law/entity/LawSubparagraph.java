@@ -4,6 +4,9 @@ import jakarta.persistence.*;
 import lawpal.lawpal.common.entity.Timestamped;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * 호에 대한 table 입니다.
@@ -32,4 +35,7 @@ public class LawSubparagraph extends Timestamped {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "law_paragraphs_id", nullable = false)
     private LawParagraph lawParagraph;
+
+    @OneToMany(mappedBy = "lawSubparagraph", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LawItem> itemList = new ArrayList<>();
 }

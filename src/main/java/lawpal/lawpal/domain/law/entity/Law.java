@@ -20,47 +20,146 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Law extends Timestamped {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 법령일련번호
+    /**
+     * 법령일련번호
+     * MST 값
+     * ex) 253527
+     */
     @Column(nullable = false, unique = true)
-    private Long lawSerialNumber;
+    private String lawSerialNumber;
 
-    // 법령명
+    /**
+     * 법령ID
+     * ex) 010719
+     */
+    @Column
+    private String lawId;
+
+    /**
+     * 법령키
+     * ex) 0068701997123100673
+     */
+    @Column(nullable = false, unique = true)
+    private String lawKey;
+
+    /**
+     * 법령명 한글
+     */
     @Column(nullable = false)
     private String name;
 
-    // 한글 법령명 약칭
+    /**
+     * 한글 법령명 약칭
+     */
     private String shortName;
 
-    // 법령명 한자
+    /**
+     * 법령명 한자
+     */
     private String hanjaName;
 
-    // 법 종류 (법률 / 시행령 / 시행규칙 등)
+    /**
+     * 법 종류
+     * 법률 / 시행령 / 시행규칙 등
+     */
     @Column(nullable = false)
     private String lawType;
 
-    // 공포번호
+    /**
+     * 공포번호
+     */
     private String proclamationNumber;
 
-    // 공포일자
+    /**
+     * 공포일자
+     */
     private LocalDate proclamationDate;
 
-    // 시행일자
+    /**
+     * 시행일자
+     */
     private LocalDate effectiveDate;
 
-    // 소관부처명
-    private String ministryName;
+    /**
+     * 제개정구분
+     * 일부개정 / 전부개정 / 타법개정 등
+     */
+    private String revisionType;
 
-    // 현행 / 연혁 여부
+    /**
+     * 제개정구분 분류
+     */
+    private String revisionClassification;
+
+    /**
+     * 의결종류
+     */
+    private String decisionType;
+
+    /**
+     * 제안종류
+     */
+    private String proposalType;
+
+
+    /**
+     * 공동부령 정보
+     */
+    private String jointMinistry;
+
+    /**
+     * 전화번호
+     */
+    private String phoneNumber;
+
+    /**
+     * 언어
+     */
+    private String language;
+
+    /**
+     * 현행 / 연혁 여부
+     */
     private String historyCode;
 
-    // 법령 상태
+    /**
+     * 법령 상태
+     */
     private String status;
 
-    // 법령 상세 링크
+    /**
+     * 공포법령 여부
+     */
+    private String proclaimedYn;
+
+    /**
+     * 한글법령 여부
+     */
+    private String koreanYn;
+
+    /**
+     * 제명변경 여부
+     */
+    private String titleChangedYn;
+
+    /**
+     * 별표편집 여부
+     */
+    private String annexYn;
+
+    /**
+     * 편장절관 구조코드
+     */
+    private String structureCode;
+
+    /**
+     * 법령 상세 링크
+     */
     @Column(length = 1000)
     private String detailLink;
 
@@ -69,5 +168,15 @@ public class Law extends Timestamped {
     private Ministry ministry;
 
     @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LawArticle> articles = new ArrayList<>();
+
+    @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LawSupplement> supplements = new ArrayList<>();
+//
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "law_type_id", nullable = false)
+//    private LawType lawType;
+
+//    @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<LawAmendment> amendments = new ArrayList<>();
 }
