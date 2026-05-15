@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface LawRepository extends JpaRepository<Law, Long> {
-    boolean existsByLawSerialNumber(Long lawSerialNumber);
-    Optional<Law> findByLawSerialNumber(Long lawSerialNumber);
+    boolean existsByLawSerialNumber(String lawSerialNumber);
+    Optional<Law> findByLawSerialNumber(String lawSerialNumber);
 }
