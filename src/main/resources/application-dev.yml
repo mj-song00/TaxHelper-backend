@@ -31,3 +31,6 @@ jwt:
     key: ${JWT_SECRET_KEY}
   refresh-expiration: ${JWT_REFRESH_EXPIRATION_TIME}
   expiration: ${JWT_EXPIRATION_TIME}
+
+api:
+  url: ${API_URL}
