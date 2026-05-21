@@ -13,6 +13,9 @@ public class LawSummaryRequest {
     @JsonProperty("법령일련번호")
     private String mst;
 
+    @JsonProperty("법령키")
+    private String lawKey;
+
     @JsonProperty("법령명한글")
     private String lawName;
 
