@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.law.dto.request.LawListRequest;
-import lawpal.lawpal.domain.law.dto.request.LawRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,9 +23,14 @@ public class LawApiClient {
     private String apiUrl;
 
 
-    public LawListRequest fetchLawList(String query) {
-        String url = apiUrl + "&query=" + query + "&type=JSON";
-        log.info("법령 API 요청 URL = {}", url);
+    public LawListRequest fetchLawList(String keyword, int page, int numOfRows) {
+        String url = apiUrl
+                + "&target=eflaw"
+                + "&query=" + keyword
+                + "&type=JSON"
+                + "&page=" + page
+                + "&display=" + numOfRows;
+
         try {
             String response = restClient.get()
                     .uri(url)
@@ -34,7 +38,6 @@ public class LawApiClient {
                     .body(String.class);
 
             log.info("법령 API 응답 성공");
-            log.debug("법령 API 응답 데이터 = {}", response);
 
             return objectMapper.readValue(response, LawListRequest.class);
 
