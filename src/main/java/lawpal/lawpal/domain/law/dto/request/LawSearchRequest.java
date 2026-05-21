@@ -33,6 +33,9 @@ public class LawSearchRequest {
     @JsonProperty("resultCode")
     private String resultCode;
 
+    @JsonProperty("numOfRows")
+    private String numOfRows;
+
     @JsonProperty("law")
     private List<LawSummaryRequest> law;
 }
