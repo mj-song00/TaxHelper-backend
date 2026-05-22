@@ -17,11 +17,4 @@ public class LawTypeRequest {
 
     @JsonProperty("법종구분코드")
     private String typeCode;
-
-//    public LawType toEntity() {
-//        return LawType.builder()
-//                .typeCode(typeCode)
-//                .typeName(typeName)
-//                .build();
-//    }
 }
