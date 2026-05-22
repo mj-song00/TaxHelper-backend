@@ -3,17 +3,16 @@ package lawpal.lawpal.domain.law.service;
 import lawpal.lawpal.common.config.LawApiClient;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
-import lawpal.lawpal.domain.law.dto.request.LawListRequest;
-import lawpal.lawpal.domain.law.dto.request.LawSearchRequest;
-import lawpal.lawpal.domain.law.dto.request.LawSummaryRequest;
-import lawpal.lawpal.domain.law.entity.Law;
-import lawpal.lawpal.domain.law.repository.LawRepository;
+import lawpal.lawpal.domain.law.dto.request.*;
+import lawpal.lawpal.domain.law.entity.*;
+import lawpal.lawpal.domain.law.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -23,6 +22,12 @@ public class LawService {
 
     private final LawApiClient lawApiClient;
     private final LawRepository lawRepository;
+
+    private final LawArticleRepository lawArticleRepository;
+    private final LawParagraphRepository lawParagraphRepository;
+    private final LawSubparagraphRepository lawSubparagraphRepository;
+    private final LawSupplementRepository lawSupplementRepository;
+    private final LawTypeRepository lawTypeRepository;
 
 
     public void requestData(String query) {
@@ -59,12 +64,19 @@ public class LawService {
                         continue;
                     }
 
+                    LawType lawType = lawTypeRepository.findByTypeName(item.getLawType())
+                            .orElseGet(() -> lawTypeRepository.save(
+                                    LawType.builder()
+                                            .typeName(item.getLawType())
+                                            .build()
+                            ));
+
                     Law law = Law.builder()
                             .lawSerialNumber(item.getMst())
                             .lawKey(item.getMst())
                             .lawId(item.getLawId())
                             .name(item.getLawName())
-                            .lawType(item.getLawType())
+                            .lawType(lawType)
                             .proclamationNumber(item.getProclamationNumber())
                             .detailLink(item.getDetailLink())
                             .build();
@@ -80,6 +92,80 @@ public class LawService {
             }
 
             page++;
+        }
+    }
+
+    public void saveLawDetail() {
+        List<Law> laws = lawRepository.findAll();
+
+        for (Law law : laws) {
+            LawDetailRequest detail = lawApiClient.fetchLawDetail(law.getLawId());
+
+            if (detail == null || detail.get기본정보() == null) {
+                continue;
+            }
+
+            if (detail.get조문() != null && detail.get조문().getUnits()!= null) {
+                for (ArticleUnitRequest articleRequest : detail.get조문().getUnits()) {
+
+                    LawArticle article = LawArticle.builder()
+                            .law(law)
+                            .articleNumber(articleRequest.getArticleNo())
+                            .articleKey(articleRequest.getArticleNo())
+                            .articleTitle(articleRequest.getTitle())
+                            . articleContent(articleRequest.getContent())
+                            .build();
+
+                    lawArticleRepository.save(article);
+
+                    if (articleRequest.getParagraph() != null) {
+                        for (ParagraphRequest paragraphRequest : articleRequest.getParagraph()) {
+
+                            LawParagraph paragraph = LawParagraph.builder()
+                                    .lawArticle(article)
+                                    .paragraphNumber(paragraphRequest.getParagraphNo())
+                                    .content(paragraphRequest.getContent())
+                                    .build();
+
+                            lawParagraphRepository.save(paragraph);
+
+                            if (paragraphRequest.getItem() != null) {
+                                for (SubParagraphRequest subparagraphRequest : paragraphRequest.getItem()) {
+
+                                    LawSubparagraph subparagraph = LawSubparagraph.builder()
+                                            .lawParagraph(paragraph)
+                                            .subparagraphNumber(subparagraphRequest.getItemNo())
+                                            .content(subparagraphRequest.getContent())
+                                            .build();
+
+                                    lawSubparagraphRepository.save(subparagraph);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (detail.get부칙() != null && detail.get부칙().getUnits() != null) {
+                for (SupplementUnitRequest supplementRequest : detail.get부칙().getUnits()) {
+
+                    String content = supplementRequest.getContent() != null
+                            ? supplementRequest.getContent().stream()
+                            .flatMap(List::stream)
+                            .collect(Collectors.joining("\n"))
+                            : null;
+
+                    LawSupplement supplement = LawSupplement.builder()
+                            .law(law)
+                            .supplementKey(supplementRequest.getKey())
+                            .proclamationDate(supplementRequest.getProclamationDate())
+                            .proclamationNumber(supplementRequest.getProclamationNo())
+                            .content(content)
+                            .build();
+
+                    lawSupplementRepository.save(supplement);
+                }
+            }
         }
     }
 }

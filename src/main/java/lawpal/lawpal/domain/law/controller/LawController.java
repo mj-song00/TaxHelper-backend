@@ -24,12 +24,21 @@ public class LawController {
     public final LawService lawService;
 
 
-    @Operation(summary = "OPEN API 데이터 요청", description = "법령 목록을 조회합니다. ")
+    @Operation(summary = "OPEN API 데이터 요청", description = "법령 목록을 조회, 저장합니다. 중복값은 제외됩니다.")
     @GetMapping("")
     public ResponseEntity<ApiResponse<Void>> request(
             @RequestParam String query
     ){
         lawService.requestData(query);
+        ApiResponse<Void> response =
+                ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @Operation(summary = "법령 상세조회 저장 ", description = "해당 법령을 상세조회 및 저장합니다. 중복값은 제외됩니다.")
+    @GetMapping("/detail")
+    public ResponseEntity<ApiResponse<Void>> getDetail(){
+        lawService.saveLawDetail();
         ApiResponse<Void> response =
                 ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
         return ResponseEntity.status(HttpStatus.OK).body(response);

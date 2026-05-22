@@ -3,7 +3,9 @@ package lawpal.lawpal.common.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
+import lawpal.lawpal.domain.law.dto.request.LawDetailRequest;
 import lawpal.lawpal.domain.law.dto.request.LawListRequest;
+import lawpal.lawpal.domain.law.dto.request.LawRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +51,38 @@ public class LawApiClient {
             throw new BaseException(ExceptionEnum.API_CALL_FAILED);
         } catch (Exception e) {
 
+            log.error("법령 API JSON 매핑 실패");
+            log.error("응답 매핑 중 예외 발생", e);
+
+            throw new BaseException(ExceptionEnum.API_MATCHING_FAILED);
+        }
+    }
+
+    public  LawDetailRequest fetchLawDetail(String lawId) {
+        String url = apiUrl
+                + "&target=eflaw"
+                + "&ID=" + lawId
+                + "&type=JSON";
+
+        try {
+            String response = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(String.class);
+
+            log.info("법령 API 응답 성공");
+
+            LawRequest lawRequest = objectMapper.readValue(response, LawRequest.class);
+
+            return lawRequest.get법령();
+
+        } catch (RestClientException e) {
+            log.error("법령 API 호출 실패");
+            log.error("요청 URL = {}", url);
+            log.error("에러 메시지 = {}", e.getMessage(), e);
+
+            throw new BaseException(ExceptionEnum.API_CALL_FAILED);
+        } catch (Exception e) {
             log.error("법령 API JSON 매핑 실패");
             log.error("응답 매핑 중 예외 발생", e);
 
