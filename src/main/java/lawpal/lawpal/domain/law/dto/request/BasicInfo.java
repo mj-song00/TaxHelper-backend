@@ -2,7 +2,6 @@ package lawpal.lawpal.domain.law.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.Column;
 import lawpal.lawpal.domain.ministry.entity.Department;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -157,19 +156,12 @@ public class BasicInfo {
     @JsonProperty("법령상세링크")
     private String detailLink;
 
+
     /**
-     * 법 종류
-     * 법률 / 시행령 / 시행규칙 등
+     * 법종구분
      */
-    @Column(nullable = false)
-    private String lawType;
-
-
-//    /**
-//     * 법종구분
-//     */
-//    @JsonProperty("법종구분")
-//    private LawTypeRequest lawType;
+    @JsonProperty("법종구분")
+    private LawTypeRequest lawType;
 
     /**
      * 소관부처
