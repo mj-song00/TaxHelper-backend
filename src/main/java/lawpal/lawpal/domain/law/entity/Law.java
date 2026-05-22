@@ -63,12 +63,12 @@ public class Law extends Timestamped {
      */
     private String hanjaName;
 
-    /**
-     * 법 종류
-     * 법률 / 시행령 / 시행규칙 등
-     */
-    @Column(nullable = false)
-    private String lawType;
+//    /**
+//     * 법 종류
+//     * 법률 / 시행령 / 시행규칙 등
+//     */
+//    @Column(nullable = false)
+//    private String lawType;
 
     /**
      * 공포번호
@@ -172,10 +172,10 @@ public class Law extends Timestamped {
 
     @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LawSupplement> supplements = new ArrayList<>();
-//
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "law_type_id", nullable = false)
-//    private LawType lawType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "law_type_id", nullable = false)
+    private LawType lawType;
 
 //    @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
 //    private List<LawAmendment> amendments = new ArrayList<>();
