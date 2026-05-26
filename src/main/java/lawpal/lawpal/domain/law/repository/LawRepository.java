@@ -4,5 +4,5 @@ import lawpal.lawpal.domain.law.entity.Law;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LawRepository extends JpaRepository<Law, Long> {
-    boolean existsByLawKey(String lawId);
+    boolean existsByLawSerialNumber(String mst);
 }

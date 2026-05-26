@@ -78,12 +78,12 @@ public class Law extends Timestamped {
     /**
      * 공포일자
      */
-    private LocalDate proclamationDate;
+    private String proclamationDate;
 
     /**
      * 시행일자
      */
-    private LocalDate effectiveDate;
+    private String effectiveDate;
 
     /**
      * 제개정구분

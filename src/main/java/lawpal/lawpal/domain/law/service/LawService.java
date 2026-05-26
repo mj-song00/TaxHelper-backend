@@ -6,6 +6,8 @@ import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.law.dto.request.*;
 import lawpal.lawpal.domain.law.entity.*;
 import lawpal.lawpal.domain.law.repository.*;
+import lawpal.lawpal.domain.ministry.entity.Ministry;
+import lawpal.lawpal.domain.ministry.repository.MinistryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,16 +31,23 @@ public class LawService {
     private final LawSupplementRepository lawSupplementRepository;
     private final LawTypeRepository lawTypeRepository;
 
+    private final MinistryRepository ministryRepository;
 
     public void requestData(String query) {
+
         int page = 1;
         int numOfRows = 100;
 
+        int totalItemCount = 0;
+        int currentCount = 0;
+        int nonCurrentSkipCount = 0;
+        int duplicateSkipCount = 0;
+        int savedCount = 0;
+
         while (true) {
 
-            System.out.println("현재 요청 페이지 = " + page);
-
-            LawListRequest lawRequest = lawApiClient.fetchLawList(query, page, numOfRows);
+            LawListRequest lawRequest =
+                    lawApiClient.fetchLawList(query, page, numOfRows);
 
             if (lawRequest == null || lawRequest.getLawSearch() == null) {
                 throw new BaseException(ExceptionEnum.API_CALL_FAILED);
@@ -47,42 +56,66 @@ public class LawService {
             LawSearchRequest lawSearch = lawRequest.getLawSearch();
             List<LawSummaryRequest> lawList = lawSearch.getLaw();
 
+            if (lawList == null || lawList.isEmpty()) {
+                break;
+            }
+
             System.out.println("API totalCnt = " + lawSearch.getTotalCount());
+            System.out.println("현재 페이지 데이터 개수 = " + lawList.size());
 
-            if (lawList != null) {
+            for (LawSummaryRequest item : lawList) {
 
-                System.out.println("현재 페이지 데이터 개수 = " + lawList.size());
+                totalItemCount++;
 
-                for (LawSummaryRequest item : lawList) {
+                if (!"현행".equals(item.getHistoryCode())) {
+                    nonCurrentSkipCount++;
 
-                    if (lawRepository.existsByLawKey(item.getMst())) {
-
-                        System.out.println("중복 스킵 lawKey = " + item.getMst()
-                                + ", lawId = " + item.getLawId()
-                                + ", name = " + item.getLawName());
-
-                        continue;
-                    }
-
-                    LawType lawType = lawTypeRepository.findByTypeName(item.getLawType())
-                            .orElseGet(() -> lawTypeRepository.save(
-                                    LawType.builder()
-                                            .typeName(item.getLawType())
-                                            .build()
-                            ));
-
-                    Law law = Law.builder()
-                            .lawSerialNumber(item.getMst())
-                            .lawKey(item.getMst())
-                            .lawId(item.getLawId())
-                            .name(item.getLawName())
-                            .lawType(lawType)
-                            .proclamationNumber(item.getProclamationNumber())
-                            .detailLink(item.getDetailLink())
-                            .build();
-
-                    lawRepository.save(law);
+                    continue;
                 }
+
+                currentCount++;
+
+                if (lawRepository.existsByLawSerialNumber(item.getMst())) {
+                    duplicateSkipCount++;
+
+                    continue;
+                }
+
+                LawType lawType = lawTypeRepository
+                        .findByTypeName(item.getLawType())
+                        .orElseGet(() -> lawTypeRepository.save(
+                                LawType.builder()
+                                        .typeName(item.getLawType())
+                                        .build()
+                        ));
+
+                Ministry ministry = ministryRepository
+                        .findByMinistryCode(item.getMinistryCode())
+                        .orElseGet(() -> ministryRepository.save(
+                                Ministry.builder()
+                                        .ministryName(item.getMinistryName())
+                                        .ministryCode(item.getMinistryCode())
+                                        .build()
+                        ));
+
+                Law law = Law.builder()
+                        .lawSerialNumber(item.getMst())
+                        .lawId(item.getLawId())
+                        .lawKey(item.getMst())
+                        .name(item.getLawName())
+                        .lawType(lawType)
+                        .ministry(ministry)
+                        .proclamationNumber(item.getProclamationNumber())
+                        .proclamationDate(item.getProclamationDate())
+                        .effectiveDate(item.getEffectiveDate())
+                        .detailLink(item.getDetailLink())
+                        .historyCode(item.getHistoryCode())
+                        .revisionType(item.getRevisionType())
+                        .build();
+
+                lawRepository.save(law);
+                savedCount++;
+
             }
 
             int totalCnt = Integer.parseInt(lawSearch.getTotalCount());
@@ -93,16 +126,43 @@ public class LawService {
 
             page++;
         }
+
+        System.out.println("목록 저장 완료");
+        System.out.println("전체 처리 항목 수 = " + totalItemCount);
+        System.out.println("현행 항목 수 = " + currentCount);
+        System.out.println("현행 아님 스킵 수 = " + nonCurrentSkipCount);
+        System.out.println("중복 스킵 수 = " + duplicateSkipCount);
+        System.out.println("저장 개수 = " + savedCount);
     }
 
     public void saveLawDetail() {
         List<Law> laws = lawRepository.findAll();
 
+
+        int index = 0;
         for (Law law : laws) {
+            index++;
+            log.info("본문 저장 진행 {}/{} lawId = {}, name = {}",
+                    index,
+                    laws.size(),
+                    law.getLawId(),
+                    law.getName());
+
             LawDetailRequest detail = lawApiClient.fetchLawDetail(law.getLawId());
 
+
             if (detail == null || detail.get기본정보() == null) {
-                continue;
+                LawDetailRequest mstDetail = lawApiClient.fetchLawDetailByMst(law.getLawSerialNumber());
+
+                if (mstDetail == null || mstDetail.get기본정보() == null) {
+                    log.warn("본문 저장 최종 스킵 lawId = {}, mst = {}, name = {}",
+                            law.getLawId(),
+                            law.getLawSerialNumber(),
+                            law.getName());
+                    continue;
+                }
+
+                detail = mstDetail;
             }
 
             if (detail.get조문() != null && detail.get조문().getUnits()!= null) {
