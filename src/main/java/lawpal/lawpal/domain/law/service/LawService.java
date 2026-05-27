@@ -6,7 +6,9 @@ import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.law.dto.request.*;
 import lawpal.lawpal.domain.law.entity.*;
 import lawpal.lawpal.domain.law.repository.*;
+import lawpal.lawpal.domain.ministry.entity.LawJointMinistry;
 import lawpal.lawpal.domain.ministry.entity.Ministry;
+import lawpal.lawpal.domain.ministry.repository.LawJointMinistryRepository;
 import lawpal.lawpal.domain.ministry.repository.MinistryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ public class LawService {
     private final LawTypeRepository lawTypeRepository;
 
     private final MinistryRepository ministryRepository;
+    private final LawJointMinistryRepository lawJointMinistryRepository;
 
     public void requestData(String query) {
 
@@ -43,6 +46,7 @@ public class LawService {
         int nonCurrentSkipCount = 0;
         int duplicateSkipCount = 0;
         int savedCount = 0;
+        int jointMinistryCount = 0;
 
         while (true) {
 
@@ -69,7 +73,6 @@ public class LawService {
 
                 if (!"현행".equals(item.getHistoryCode())) {
                     nonCurrentSkipCount++;
-
                     continue;
                 }
 
@@ -77,7 +80,6 @@ public class LawService {
 
                 if (lawRepository.existsByLawSerialNumber(item.getMst())) {
                     duplicateSkipCount++;
-
                     continue;
                 }
 
@@ -89,14 +91,24 @@ public class LawService {
                                         .build()
                         ));
 
-                Ministry ministry = ministryRepository
-                        .findByMinistryCode(item.getMinistryCode())
-                        .orElseGet(() -> ministryRepository.save(
-                                Ministry.builder()
-                                        .ministryName(item.getMinistryName())
-                                        .ministryCode(item.getMinistryCode())
-                                        .build()
-                        ));
+                String ministryCode = item.getMinistryCode();
+                String ministryName = item.getMinistryName();
+
+                boolean isJointMinistry =
+                        ministryCode != null && ministryCode.contains(",");
+
+                Ministry ministry = null;
+
+                if (!isJointMinistry) {
+                    ministry = ministryRepository
+                            .findFirstByMinistryCode(ministryCode.trim())
+                            .orElseGet(() -> ministryRepository.save(
+                                    Ministry.builder()
+                                            .ministryName(ministryName.trim())
+                                            .ministryCode(ministryCode.trim())
+                                            .build()
+                            ));
+                }
 
                 Law law = Law.builder()
                         .lawSerialNumber(item.getMst())
@@ -114,8 +126,24 @@ public class LawService {
                         .build();
 
                 lawRepository.save(law);
-                savedCount++;
 
+                if (isJointMinistry) {
+                    String[] ministryCodes = ministryCode.split(",");
+                    String[] ministryNames = ministryName.split(",");
+
+                    for (int i = 0; i < ministryCodes.length; i++) {
+                        LawJointMinistry lawJointMinistry = LawJointMinistry.builder()
+                                .law(law)
+                                .ministryCode(ministryCodes[i].trim())
+                                .ministryName(ministryNames[i].trim())
+                                .build();
+
+                        lawJointMinistryRepository.save(lawJointMinistry);
+                        jointMinistryCount++;
+                    }
+                }
+
+                savedCount++;
             }
 
             int totalCnt = Integer.parseInt(lawSearch.getTotalCount());
@@ -133,6 +161,7 @@ public class LawService {
         System.out.println("현행 아님 스킵 수 = " + nonCurrentSkipCount);
         System.out.println("중복 스킵 수 = " + duplicateSkipCount);
         System.out.println("저장 개수 = " + savedCount);
+        System.out.println("공동부처 저장 개수 = " + jointMinistryCount);
     }
 
     public void saveLawDetail() {

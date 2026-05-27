@@ -39,7 +39,6 @@ public class LawDetailRequest {
                 .name(기본정보 != null ? 기본정보.getNameKor() : null)
                 .shortName(기본정보 != null ? 기본정보.getNameShort() : null)
                 .hanjaName(기본정보 != null ? 기본정보.getNameHanja() : null)
-                //.lawType(기본정보 != null ? 기본정보.getLawType() : null)
                 .proclamationNumber(기본정보 != null ? 기본정보.getProclamationNo() : null)
                 .proclamationDate(기본정보 != null ? 기본정보.getProclamationDate() : null)
                 .effectiveDate(기본정보 != null ? 기본정보.getEnforcementDate() : null)
