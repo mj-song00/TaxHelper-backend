@@ -70,13 +70,13 @@ public class BasicInfo {
      * ex) 2024-01-01
      */
     @JsonProperty("공포일자")
-    private LocalDate proclamationDate;
+    private String proclamationDate;
 
     /**
      * 시행일자
      */
     @JsonProperty("시행일자")
-    private LocalDate enforcementDate;
+    private String  enforcementDate;
 
     /**
      * 전화번호
