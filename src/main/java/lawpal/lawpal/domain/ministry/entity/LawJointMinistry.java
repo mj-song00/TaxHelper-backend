@@ -2,6 +2,7 @@ package lawpal.lawpal.domain.ministry.entity;
 
 import jakarta.persistence.*;
 import lawpal.lawpal.common.entity.Timestamped;
+import lawpal.lawpal.domain.law.entity.Law;
 import lombok.*;
 
 @Getter
@@ -27,4 +28,8 @@ public class LawJointMinistry extends Timestamped {
      */
     @Column(nullable = false)
     private String ministryCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "law_id", nullable = false)
+    private Law law;
 }
