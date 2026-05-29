@@ -24,12 +24,10 @@ public class LawParagraph extends Timestamped {
     private Long id;
 
     // 항 번호 ex) ①
-    @Column(nullable = false)
     private String paragraphNumber;
 
     // 항 내용
-    @Lob
-    @Column(nullable = false)
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
