@@ -28,8 +28,7 @@ public class LawSubparagraph extends Timestamped {
     private String subparagraphNumber;
 
     // 호 내용
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)

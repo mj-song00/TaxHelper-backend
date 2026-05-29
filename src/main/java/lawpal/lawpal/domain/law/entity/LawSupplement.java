@@ -20,7 +20,7 @@ public class LawSupplement extends Timestamped {
     private Long id;
 
     // 부칙키
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String supplementKey;
 
     // 부칙공포일자
@@ -31,8 +31,7 @@ public class LawSupplement extends Timestamped {
     private String proclamationNumber;
 
     // 부칙내용
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @ManyToOne(fetch = FetchType.LAZY)
