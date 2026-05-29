@@ -6,8 +6,10 @@ import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.law.dto.request.*;
 import lawpal.lawpal.domain.law.entity.*;
 import lawpal.lawpal.domain.law.repository.*;
+import lawpal.lawpal.domain.ministry.entity.Department;
 import lawpal.lawpal.domain.ministry.entity.LawJointMinistry;
 import lawpal.lawpal.domain.ministry.entity.Ministry;
+import lawpal.lawpal.domain.ministry.repository.DepartmentRepository;
 import lawpal.lawpal.domain.ministry.repository.LawJointMinistryRepository;
 import lawpal.lawpal.domain.ministry.repository.MinistryRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class LawService {
 
     private final MinistryRepository ministryRepository;
     private final LawJointMinistryRepository lawJointMinistryRepository;
+    private final DepartmentRepository departmentRepository;
 
     public void requestData(String query) {
 
@@ -167,7 +170,6 @@ public class LawService {
     public void saveLawDetail() {
         List<Law> laws = lawRepository.findAll();
 
-
         int index = 0;
         for (Law law : laws) {
             index++;
@@ -179,52 +181,89 @@ public class LawService {
 
             LawDetailRequest detail = lawApiClient.fetchLawDetail(law.getLawId());
 
-
             if (detail == null || detail.get기본정보() == null) {
-                LawDetailRequest mstDetail = lawApiClient.fetchLawDetailByMst(law.getLawSerialNumber());
-
-                if (mstDetail == null || mstDetail.get기본정보() == null) {
-                    log.warn("본문 저장 최종 스킵 lawId = {}, mst = {}, name = {}",
-                            law.getLawId(),
-                            law.getLawSerialNumber(),
-                            law.getName());
-                    continue;
-                }
-
-                detail = mstDetail;
+                log.warn("본문 저장 스킵 lawId = {}, mst = {}, name = {}",
+                        law.getLawId(),
+                        law.getLawSerialNumber(),
+                        law.getName());
+                continue;
             }
 
-            if (detail.get조문() != null && detail.get조문().getUnits()!= null) {
+            BasicInfo basicInfo = detail.get기본정보();
+
+            Law updateLaw = Law.builder()
+                    .id(law.getId())
+                    .lawSerialNumber(law.getLawSerialNumber())
+                    .lawId(law.getLawId())
+                    .lawKey(law.getLawKey())
+
+                    .name(basicInfo.getNameKor() != null ? basicInfo.getNameKor() : law.getName())
+                    .shortName(basicInfo.getNameShort() != null ? basicInfo.getNameShort() : law.getShortName())
+                    .hanjaName(basicInfo.getNameHanja() != null ? basicInfo.getNameHanja() : law.getHanjaName())
+
+                    .proclamationNumber(basicInfo.getProclamationNo() != null ? basicInfo.getProclamationNo() : law.getProclamationNumber())
+                    .proclamationDate(basicInfo.getProclamationDate() != null ? basicInfo.getProclamationDate() : law.getProclamationDate())
+                    .effectiveDate(basicInfo.getEnforcementDate() != null ? basicInfo.getEnforcementDate() : law.getEffectiveDate())
+
+                    .revisionType(basicInfo.getRevisionType() != null ? basicInfo.getRevisionType() : law.getRevisionType())
+                    .revisionClassification(basicInfo.getRevisionClassification() != null ? basicInfo.getRevisionClassification() : law.getRevisionClassification())
+                    .decisionType(basicInfo.getDecisionType() != null ? basicInfo.getDecisionType() : law.getDecisionType())
+                    .proposalType(basicInfo.getProposalType() != null ? basicInfo.getProposalType() : law.getProposalType())
+
+                    .jointMinistry(basicInfo.getJoinMinistry() != null ? basicInfo.getJoinMinistry() : law.getJointMinistry())
+                    .phoneNumber(basicInfo.getPhoneNumber() != null ? basicInfo.getPhoneNumber() : law.getPhoneNumber())
+                    .language(basicInfo.getLanguage() != null ? basicInfo.getLanguage() : law.getLanguage())
+                    .historyCode(basicInfo.getHistoryCode() != null ? basicInfo.getHistoryCode() : law.getHistoryCode())
+                    .status(basicInfo.getStatus() != null ? basicInfo.getStatus() : law.getStatus())
+                    .proclaimedYn(basicInfo.getIsProclaimed() != null ? basicInfo.getIsProclaimed() : law.getProclaimedYn())
+                    .titleChangedYn(basicInfo.getIsTitleChange() != null ? basicInfo.getIsTitleChange() : law.getTitleChangedYn())
+                    .annexYn(basicInfo.getHasAnnex() != null ? basicInfo.getHasAnnex() : law.getAnnexYn())
+                    .structureCode(basicInfo.getStructureCode() != null ? basicInfo.getStructureCode() : law.getStructureCode())
+                    .detailLink(basicInfo.getDetailLink() != null ? basicInfo.getDetailLink() : law.getDetailLink())
+
+                    .ministry(law.getMinistry())
+                    .lawType(law.getLawType())
+                    .build();
+
+            updateLaw = lawRepository.save(updateLaw);
+
+            if (detail.get조문() != null && detail.get조문().getUnits() != null) {
                 for (ArticleUnitRequest articleRequest : detail.get조문().getUnits()) {
 
                     LawArticle article = LawArticle.builder()
-                            .law(law)
+                            .law(updateLaw)
                             .articleNumber(articleRequest.getArticleNo())
-                            .articleKey(articleRequest.getArticleNo())
+                            .articleKey(articleRequest.getArticleKey())
                             .articleTitle(articleRequest.getTitle())
-                            . articleContent(articleRequest.getContent())
+                            .articleContent(articleRequest.getContent())
+                            .effectiveDate(articleRequest.getEnforcementDate())
+                            .changedYn(articleRequest.getIsChanged())
+                            .revisionType(articleRequest.getRevisionType())
+                            .movedPrevious(articleRequest.getMoveBefore())
+                            .movedNext(articleRequest.getMoveAfter())
+                            .articleYn(articleRequest.getArticleType())
                             .build();
 
-                    lawArticleRepository.save(article);
+                    article = lawArticleRepository.save(article);
 
                     if (articleRequest.getParagraph() != null) {
                         for (ParagraphRequest paragraphRequest : articleRequest.getParagraph()) {
 
                             LawParagraph paragraph = LawParagraph.builder()
                                     .lawArticle(article)
-                                    .paragraphNumber(paragraphRequest.getParagraphNo())
-                                    .content(paragraphRequest.getContent())
+                                    .paragraphNumber(paragraphRequest.getParagraphNo() != null ? paragraphRequest.getParagraphNo() : "0")
+                                    .content(paragraphRequest.getContent() != null ? paragraphRequest.getContent() : "")
                                     .build();
 
-                            lawParagraphRepository.save(paragraph);
+                            paragraph = lawParagraphRepository.save(paragraph);
 
                             if (paragraphRequest.getItem() != null) {
                                 for (SubParagraphRequest subparagraphRequest : paragraphRequest.getItem()) {
 
                                     LawSubparagraph subparagraph = LawSubparagraph.builder()
                                             .lawParagraph(paragraph)
-                                            .subparagraphNumber(subparagraphRequest.getItemNo())
-                                            .content(subparagraphRequest.getContent())
+                                            .subparagraphNumber(subparagraphRequest.getItemNo() != null ? subparagraphRequest.getItemNo() : "0")
+                                            .content(subparagraphRequest.getContent() != null ? subparagraphRequest.getContent() : "")
                                             .build();
 
                                     lawSubparagraphRepository.save(subparagraph);
@@ -245,7 +284,7 @@ public class LawService {
                             : null;
 
                     LawSupplement supplement = LawSupplement.builder()
-                            .law(law)
+                            .law(updateLaw)
                             .supplementKey(supplementRequest.getKey())
                             .proclamationDate(supplementRequest.getProclamationDate())
                             .proclamationNumber(supplementRequest.getProclamationNo())
@@ -253,6 +292,22 @@ public class LawService {
                             .build();
 
                     lawSupplementRepository.save(supplement);
+                }
+            }
+
+            if (basicInfo.getDepartment() != null
+                    && basicInfo.getDepartment().getUnits() != null) {
+
+                for (DepartmentUnitRequest departmentRequest : basicInfo.getDepartment().getUnits()) {
+
+                    Department department = Department.builder()
+                            .law(updateLaw)
+                            .departmentKey(departmentRequest.getDepartmentKey())
+                            .departmentName(departmentRequest.getDepartmentName())
+                            .phoneNumber(departmentRequest.getPhoneNumber())
+                            .build();
+
+                    departmentRepository.save(department);
                 }
             }
         }
