@@ -63,12 +63,6 @@ public class Law extends Timestamped {
      */
     private String hanjaName;
 
-//    /**
-//     * 법 종류
-//     * 법률 / 시행령 / 시행규칙 등
-//     */
-//    @Column(nullable = false)
-//    private String lawType;
 
     /**
      * 공포번호
@@ -136,11 +130,6 @@ public class Law extends Timestamped {
      * 공포법령 여부
      */
     private String proclaimedYn;
-
-    /**
-     * 한글법령 여부
-     */
-    private String koreanYn;
 
     /**
      * 제명변경 여부
