@@ -3,16 +3,15 @@ package lawpal.lawpal.domain.law.dto.request;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lawpal.lawpal.domain.law.LawReferenceDeserializer;
-import lawpal.lawpal.domain.law.entity.LawArticle;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @NoArgsConstructor
@@ -27,13 +26,17 @@ public class ArticleUnitRequest {
     private String title;
 
     @JsonProperty("조문내용")
-    private String content;
+    private JsonNode content;
 
     @JsonProperty("조문시행일자")
     private String enforcementDate;
 
     @JsonProperty("조문변경여부")
     private String isChanged;
+
+    @JsonProperty("재개정유형")
+    private String revisionType;
+
 
     @JsonProperty("조문이동이전")
     private String moveBefore;
@@ -51,26 +54,34 @@ public class ArticleUnitRequest {
     @JsonProperty("조문가지번호")
     private String branchNo;
 
+    @JsonProperty("조문키")
+    private String articleKey;
+
     @JsonProperty("항")
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     private List<ParagraphRequest> paragraph =  new ArrayList<>();
 
-    public LawArticle toEntity() {
+    public String getContent() {
+        if (content == null || content.isNull()) {
+            return null;
+        }
 
-        return LawArticle.builder()
-                .articleNumber(articleNo)
-                .articleTitle(title)
-                .articleContent(content)
-                .effectiveDate(enforcementDate)
-                .changedYn(isChanged)
-                .movedPrevious(moveBefore)
-                .movedNext(moveAfter)
-                .articleYn(articleType)
-                .paragraphs(paragraph != null
-                        ? paragraph.stream()
-                        .map(ParagraphRequest::toEntity)
-                        .collect(Collectors.toList())
-                        : new ArrayList<>())
-                .build();
+        if (content.isTextual()) {
+            return content.asText();
+        }
+
+        if (content.isArray()) {
+            List<String> result = new ArrayList<>();
+            content.forEach(node -> {
+                if (node.isArray()) {
+                    node.forEach(child -> result.add(child.asText()));
+                } else {
+                    result.add(node.asText());
+                }
+            });
+            return String.join("\n", result);
+        }
+
+        return content.asText();
     }
 }
