@@ -28,7 +28,7 @@ public class LawArticle extends Timestamped {
      * 조문 키
      * ex) 0001001
      */
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String articleKey;
 
     /**
@@ -47,8 +47,7 @@ public class LawArticle extends Timestamped {
     /**
      * 조문 내용
      */
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String articleContent;
 
     /**
