@@ -1,6 +1,7 @@
 package lawpal.lawpal.domain.ministry.entity;
 
 import jakarta.persistence.*;
+import lawpal.lawpal.domain.law.entity.Law;
 import lombok.*;
 
 /**
@@ -21,6 +22,7 @@ public class Department {
      *  부서키
      *  ex.211795
      */
+    @Column(unique = true)
     private String departmentKey;
 
     /**
@@ -34,4 +36,9 @@ public class Department {
      * ex.02-0000-0000
      */
     private String phoneNumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "law_id", nullable = false)
+    private Law law;
+
 }
