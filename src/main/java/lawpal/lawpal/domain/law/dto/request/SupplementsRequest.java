@@ -15,10 +15,4 @@ public class SupplementsRequest {
     @JsonProperty("부칙단위")
     private List<SupplementUnitRequest> units;
 
-//    public List<LawSupplement> toEntityList() {
-//        if (units == null) return null;
-//        return units.stream()
-//                .map(SupplementUnitRequest::toEntity)
-//                .collect(Collectors.toList());
-//    }
 }
