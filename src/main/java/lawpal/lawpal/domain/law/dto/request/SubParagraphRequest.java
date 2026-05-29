@@ -1,7 +1,7 @@
 package lawpal.lawpal.domain.law.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lawpal.lawpal.domain.law.entity.LawSubparagraph;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +17,7 @@ public class SubParagraphRequest {
     private String itemNo;
 
     @JsonProperty("호내용")
-    private String content;
+    private JsonNode content;
 
     @JsonProperty("호가지번호")
     private String branchNO;
@@ -25,15 +25,29 @@ public class SubParagraphRequest {
     @JsonProperty("목")
     private List<LawItemRequest> subItem = new ArrayList<>();
 
-    public LawSubparagraph toEntity() {
-        return LawSubparagraph.builder()
-                .subparagraphNumber(itemNo)
-                .content(content)
-                .itemList(subItem != null
-                        ? subItem.stream()
-                        .map(LawItemRequest::toEntity)
-                        .toList()
-                        : new ArrayList<>())
-                .build();
+    public String getContent() {
+        if (content == null || content.isNull()) {
+            return null;
+        }
+
+        if (content.isTextual()) {
+            return content.asText();
+        }
+
+        if (content.isArray()) {
+            List<String> result = new ArrayList<>();
+
+            content.forEach(node -> {
+                if (node.isArray()) {
+                    node.forEach(child -> result.add(child.asText()));
+                } else {
+                    result.add(node.asText());
+                }
+            });
+
+            return String.join("\n", result);
+        }
+
+        return content.asText();
     }
 }
