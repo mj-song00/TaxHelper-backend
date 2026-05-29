@@ -25,13 +25,4 @@ public class SupplementUnitRequest {
     @JsonProperty("부칙내용")
     private  List<List<String>> content;
 
-
-
-    public LawSupplement toEntity(){
-        return LawSupplement.builder()
-                .proclamationNumber(proclamationNo)
-                .proclamationDate(proclamationDate)
-                .content(content != null ? content.toString() : null)
-                .build();
-    }
 }
