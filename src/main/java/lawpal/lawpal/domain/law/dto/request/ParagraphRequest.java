@@ -1,7 +1,7 @@
 package lawpal.lawpal.domain.law.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lawpal.lawpal.domain.law.entity.LawParagraph;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,16 +24,35 @@ public class ParagraphRequest {
     private String revisionTypeStr;
 
     @JsonProperty("항내용")
-    private String content;
+    private JsonNode content;
 
     @JsonProperty("호")
     private List<SubParagraphRequest> item = new ArrayList<>();
 
+    public String getContent() {
+        if (content == null || content.isNull()) {
+            return null;
+        }
 
-    public LawParagraph toEntity() {
-        return LawParagraph.builder()
-                .paragraphNumber(paragraphNo)
-                .content(content)
-                .build();
+        if (content.isTextual()) {
+            return content.asText();
+        }
+
+        if (content.isArray()) {
+            List<String> result = new ArrayList<>();
+
+            content.forEach(node -> {
+                if (node.isArray()) {
+                    node.forEach(child -> result.add(child.asText()));
+                } else {
+                    result.add(node.asText());
+                }
+            });
+
+            return String.join("\n", result);
+        }
+
+        return content.asText();
     }
+
 }
