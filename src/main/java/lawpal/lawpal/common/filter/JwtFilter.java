@@ -71,6 +71,7 @@ public class JwtFilter  implements Filter {
                 || (url.startsWith("/api/v2/admin/sign-in"))
                 || (url.startsWith("/api/v1/coin/price"))
                 || (url.startsWith("/api/v1/law"))
+                || (url.startsWith("/api/laws/chunks"))
         ) {
             chain.doFilter(request, response);
             return;
