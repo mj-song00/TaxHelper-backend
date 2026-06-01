@@ -24,7 +24,7 @@ public class LawDetailRequest {
 
     @JsonProperty("부칙")
     private SupplementsRequest 부칙;
-//
-//    @JsonProperty("개정문")
-//    private AmendmentsRequest 개정문;
+
+    @JsonProperty("개정문")
+    private AmendmentsRequest 개정문;
 }

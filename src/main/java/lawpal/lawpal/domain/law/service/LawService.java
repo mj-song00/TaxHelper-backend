@@ -38,6 +38,7 @@ public class LawService {
     private final MinistryRepository ministryRepository;
     private final LawJointMinistryRepository lawJointMinistryRepository;
     private final DepartmentRepository departmentRepository;
+    private final LawAmendmentRepository lawAmendmentRepository;
 
     public void requestData(String query) {
 
@@ -208,15 +209,12 @@ public class LawService {
                     .revisionType(basicInfo.getRevisionType() != null ? basicInfo.getRevisionType() : law.getRevisionType())
                     .revisionClassification(basicInfo.getRevisionClassification() != null ? basicInfo.getRevisionClassification() : law.getRevisionClassification())
                     .decisionType(basicInfo.getDecisionType() != null ? basicInfo.getDecisionType() : law.getDecisionType())
-                    .proposalType(basicInfo.getProposalType() != null ? basicInfo.getProposalType() : law.getProposalType())
 
                     .jointMinistry(basicInfo.getJoinMinistry() != null ? basicInfo.getJoinMinistry() : law.getJointMinistry())
                     .phoneNumber(basicInfo.getPhoneNumber() != null ? basicInfo.getPhoneNumber() : law.getPhoneNumber())
                     .language(basicInfo.getLanguage() != null ? basicInfo.getLanguage() : law.getLanguage())
                     .historyCode(basicInfo.getHistoryCode() != null ? basicInfo.getHistoryCode() : law.getHistoryCode())
-                    .status(basicInfo.getStatus() != null ? basicInfo.getStatus() : law.getStatus())
                     .proclaimedYn(basicInfo.getIsProclaimed() != null ? basicInfo.getIsProclaimed() : law.getProclaimedYn())
-                    .titleChangedYn(basicInfo.getIsTitleChange() != null ? basicInfo.getIsTitleChange() : law.getTitleChangedYn())
                     .annexYn(basicInfo.getHasAnnex() != null ? basicInfo.getHasAnnex() : law.getAnnexYn())
                     .structureCode(basicInfo.getStructureCode() != null ? basicInfo.getStructureCode() : law.getStructureCode())
                     .detailLink(basicInfo.getDetailLink() != null ? basicInfo.getDetailLink() : law.getDetailLink())
@@ -293,6 +291,20 @@ public class LawService {
 
                     lawSupplementRepository.save(supplement);
                 }
+            }
+
+            if (detail.get개정문() != null && detail.get개정문().getContents() != null) {
+
+                String content = detail.get개정문().getContents().stream()
+                        .flatMap(List::stream)
+                        .collect(Collectors.joining("\n"));
+
+                LawAmendment amendment = LawAmendment.builder()
+                        .law(updateLaw)
+                        .content(content)
+                        .build();
+
+                lawAmendmentRepository.save(amendment);
             }
 
             if (basicInfo.getDepartment() != null
