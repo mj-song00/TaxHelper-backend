@@ -95,11 +95,6 @@ public class Law extends Timestamped {
      */
     private String decisionType;
 
-    /**
-     * 제안종류
-     */
-    private String proposalType;
-
 
     /**
      * 공동부령 정보
@@ -122,19 +117,10 @@ public class Law extends Timestamped {
     private String historyCode;
 
     /**
-     * 법령 상태
-     */
-    private String status;
-
-    /**
      * 공포법령 여부
      */
     private String proclaimedYn;
 
-    /**
-     * 제명변경 여부
-     */
-    private String titleChangedYn;
 
     /**
      * 별표편집 여부
@@ -166,6 +152,6 @@ public class Law extends Timestamped {
     @JoinColumn(name = "law_type_id", nullable = false)
     private LawType lawType;
 
-//    @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<LawAmendment> amendments = new ArrayList<>();
+    @OneToMany(mappedBy = "law", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LawAmendment> amendments = new ArrayList<>();
 }
