@@ -1,5 +1,7 @@
 package lawpal.lawpal.domain.chunk.service;
 
+import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
+import lawpal.lawpal.domain.chunk.dto.response.ChunkResponseItem;
 import lawpal.lawpal.domain.chunk.entity.Chunk;
 import lawpal.lawpal.domain.chunk.entity.LawChunkType;
 import lawpal.lawpal.domain.chunk.repository.ChunkRepository;
@@ -10,6 +12,8 @@ import lawpal.lawpal.domain.law.repository.LawAmendmentRepository;
 import lawpal.lawpal.domain.law.repository.LawArticleRepository;
 import lawpal.lawpal.domain.law.repository.LawSupplementRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +29,7 @@ public class ChunkService {
     private final LawSupplementRepository lawSupplementRepository;
     private final LawAmendmentRepository lawAmendmentRepository;
     private final ChunkRepository chunkRepository;
+
 
     public void createChunks() {
 
@@ -87,5 +92,21 @@ public class ChunkService {
         }
 
         chunkRepository.saveAll(chunks);
+    }
+
+
+    public ChunkResponse getChunks(Pageable pageable) {
+        Page<Chunk> chunks = chunkRepository.findAll(pageable);
+
+        List<ChunkResponseItem> list = chunks.getContent().stream()
+                .map(ChunkResponseItem::new)
+                .toList();
+
+        return ChunkResponse.builder()
+                .list(list)
+                .currentPage(chunks.getNumber() + 1)
+                .totalPages(chunks.getTotalPages())
+                .totalElements(chunks.getTotalElements())
+                .build();
     }
 }

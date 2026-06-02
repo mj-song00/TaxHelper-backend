@@ -1,15 +1,19 @@
 package lawpal.lawpal.domain.chunk.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lawpal.lawpal.common.response.ApiResponse;
 import lawpal.lawpal.common.response.ApiResponseEnum;
+import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
+import lawpal.lawpal.domain.chunk.entity.Chunk;
 import lawpal.lawpal.domain.chunk.service.ChunkService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -20,9 +24,31 @@ public class LawChunkController {
     private final ChunkService chunkService;
 
     @PostMapping("")
+    @Operation(summary = "조문, 부칙, 개정문 단위로 청크를 저장합니다.", description = "현재 항, 목, 호 단위의 청크는 없습니다.")
     public ResponseEntity<ApiResponse<Void>> createChunks(){
         chunkService.createChunks();
         ApiResponse<Void> response =  ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
         return  ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/law-chunks")
+    @Operation(
+            summary = "저장된 청크를 조회합니다.",
+            description = "현재는 조문, 부칙, 개정문 단위 청크만 제공합니다."
+    )
+    public  ResponseEntity<ApiResponse<ChunkResponse>>  getList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        ChunkResponse response = chunkService.getChunks(pageable);
+
+
+        ApiResponse<ChunkResponse> apiResponse =
+                ApiResponse.successWithData(response, ApiResponseEnum.GET_SUCCESS);
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
 }
