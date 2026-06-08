@@ -6,7 +6,9 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
-      properties:
+    properties:
+      hibernate:
+        highlight_sql: true
         format_sql: true
         show-sql: true
 
@@ -34,3 +36,4 @@ jwt:
 
 api:
   url: ${API_URL}
+  detail: ${DETAIL_URL}
