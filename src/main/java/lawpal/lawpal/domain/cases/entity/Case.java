@@ -62,7 +62,7 @@ public class Case extends Timestamped {
     /**
      * 사건명: 상자산 거래차익이 구 소득세법 규정에 따른 국내원천소득인지 여부
      */
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String caseName;
 }
 
