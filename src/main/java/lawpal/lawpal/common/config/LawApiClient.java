@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
 import lawpal.lawpal.domain.cases.dto.request.PrecedentListRequest;
+import lawpal.lawpal.domain.cases.dto.request.PrecedentRequest;
 import lawpal.lawpal.domain.law.dto.request.LawDetailRequest;
 import lawpal.lawpal.domain.law.dto.request.LawListRequest;
 import lawpal.lawpal.domain.law.dto.request.LawRequest;
@@ -118,7 +119,6 @@ public class LawApiClient {
                 + "&type=JSON"
                 + "&page=" + page;
 
-
         try {
             String response = restClient.get()
                     .uri(url)
@@ -144,4 +144,34 @@ public class LawApiClient {
         }
     }
 
+    public PrecedentRequest fetchPrecDetail(String precedentSerialNumber) {
+        String url =  detailUrl
+                + "&target=prec"
+                + "&ID=" + precedentSerialNumber
+                + "&type=JSON";
+
+        try {
+            String response = restClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .body(String.class);
+
+            log.info("법령 API 응답 성공");
+
+            return objectMapper.readValue(response, PrecedentRequest.class);
+
+        } catch (RestClientException e) {
+            log.error("법령 API 호출 실패");
+            log.error("요청 URL = {}", url);
+            log.error("에러 메시지 = {}", e.getMessage(), e);
+
+            throw new BaseException(ExceptionEnum.API_CALL_FAILED);
+        } catch (Exception e) {
+
+            log.error("법령 API JSON 매핑 실패");
+            log.error("응답 매핑 중 예외 발생", e);
+
+            throw new BaseException(ExceptionEnum.API_MATCHING_FAILED);
+        }
+    }
 }

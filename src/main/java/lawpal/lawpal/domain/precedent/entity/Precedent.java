@@ -3,6 +3,7 @@ package lawpal.lawpal.domain.precedent.entity;
 import jakarta.persistence.*;
 import lawpal.lawpal.common.entity.Timestamped;
 import lawpal.lawpal.domain.cases.entity.Case;
+import lawpal.lawpal.domain.precedent.enums.PrecedentStatus;
 import lombok.*;
 
 @Getter
@@ -16,13 +17,6 @@ public class Precedent extends Timestamped  {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /**
-     * 데이터출처명 : 국세법령정보시스템(본문검색시 html만 가능)
-     * 데이터출처명 : 대법원(json 가능)
-     */
-    @Column(nullable = false)
-    private String dataSourceName;
 
     /**
      * 판례일련번호: 613683
@@ -46,7 +40,7 @@ public class Precedent extends Timestamped  {
     /**
      * 참조판례
      */
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String referenceCases;
 
     /**
@@ -68,7 +62,33 @@ public class Precedent extends Timestamped  {
     @Column(columnDefinition = "TEXT")
     private String fullText;
 
+
+    /**
+     * 판결요지
+     */
+    @Column(columnDefinition = "TEXT")
+    private String judgmentSummary;
+
+    /**
+     *  본문 저장 상태 확인
+     */
+    @Column
+    private PrecedentStatus status;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "case_id", nullable = false)
     private Case cases;
+
+    public void updateDetail(String fullText, String issue, String referenceArticles,
+                             String referenceCases, String judgmentSummary) {
+        this.fullText = fullText;
+        this.issue = issue;
+        this.referenceArticles = referenceArticles;
+        this.referenceCases = referenceCases;
+        this.judgmentSummary = judgmentSummary;
+    }
+
+    public void updateStatus(PrecedentStatus status) {
+        this.status = status;
+    }
 }

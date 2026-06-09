@@ -32,4 +32,13 @@ public class CaseController {
                 ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
+    @Operation(summary = "판례 상세조회 저장 ", description = "저장된 판례번호를 통해 상세내용을 저장합니다.")
+    @GetMapping("/detail")
+    public ResponseEntity<ApiResponse<Void>> getDetail(){
+        caseService.savePreDetail();
+        ApiResponse<Void> response =
+                ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }

@@ -3,12 +3,11 @@ package lawpal.lawpal.domain.cases.service;
 import lawpal.lawpal.common.config.LawApiClient;
 import lawpal.lawpal.common.exception.BaseException;
 import lawpal.lawpal.common.exception.ExceptionEnum;
-import lawpal.lawpal.domain.cases.dto.request.PreSearchRequest;
-import lawpal.lawpal.domain.cases.dto.request.PrecSummaryRequest;
-import lawpal.lawpal.domain.cases.dto.request.PrecedentListRequest;
+import lawpal.lawpal.domain.cases.dto.request.*;
 import lawpal.lawpal.domain.cases.entity.Case;
 import lawpal.lawpal.domain.cases.repository.CaseRepository;
 import lawpal.lawpal.domain.precedent.entity.Precedent;
+import lawpal.lawpal.domain.precedent.enums.PrecedentStatus;
 import lawpal.lawpal.domain.precedent.repository.PrecedentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class CaseService {
-
 
     private final CaseRepository caseRepository;
     private final PrecedentRepository precedentRepository;
@@ -91,7 +89,6 @@ public class CaseService {
                 }
 
                 Precedent precedent = Precedent.builder()
-                        .dataSourceName(item.getDataSourceName())
                         .precedentSerialNumber(item.getPrecedentSerialNumber())
                         .judgmentType(item.getJudgmentType())
                         .caseType(item.getCaseTypeName())
@@ -111,6 +108,78 @@ public class CaseService {
         log.info("대법원 아님 스킵 수 = {}", nonSupremeCourtSkipCount);
         log.info("중복 스킵 수 = {}", duplicateSkipCount);
         log.info("저장 개수 = {}", savedCount);
+    }
+
+    public void savePreDetail() {
+        List<Precedent> precedents = precedentRepository.findAll();
+
+        int successCount = 0;
+        int notFoundCount = 0;
+        int failCount = 0;
+
+        for (Precedent item : precedents) {
+
+
+            log.info("판례 저장 진행 {}/{} id = {}, precedentSerialNumber = {}",
+                    item.getId(),
+                    precedents.size(),
+                    item.getId(),
+                    item.getPrecedentSerialNumber());
+
+            try {
+                PrecedentRequest detail =
+                        lawApiClient.fetchPrecDetail(item.getPrecedentSerialNumber());
+
+                if (detail == null || detail.getPrecService() == null) {
+                    notFoundCount++;
+
+                    log.warn("판례 상세 없음 스킵 id = {}, precedentSerialNumber = {}",
+                            item.getId(),
+                            item.getPrecedentSerialNumber());
+
+                    continue;
+                }
+
+                PrecedentDetailRequest precService = detail.getPrecService();
+
+                log.info("판례내용 length = {}",
+                        precService.get판례내용() == null ? 0 : precService.get판례내용().length());
+                log.info("판시사항 length = {}",
+                        precService.get판시사항() == null ? 0 : precService.get판시사항().length());
+                log.info("참조조문 length = {}",
+                        precService.get참조조문() == null ? 0 : precService.get참조조문().length());
+                log.info("참조판례 length = {}",
+                        precService.get참조판례() == null ? 0 : precService.get참조판례().length());
+                log.info("판결요지 length = {}",
+                        precService.get판결요지() == null ? 0 : precService.get판결요지().length());
+
+                item.updateDetail(
+                        precService.get판례내용(),
+                        precService.get판시사항(),
+                        precService.get참조조문(),
+                        precService.get참조판례(),
+                        precService.get판결요지()
+                );
+                item.updateStatus(PrecedentStatus.DETAIL_SAVED);
+                successCount++;
+
+            } catch (Exception e) {
+                failCount++;
+                item.updateStatus(PrecedentStatus.DETAIL_FAILED);
+                log.error("판례 상세 저장 실패 후 스킵  id = {}, precedentSerialNumber = {}",
+                        item.getId(),
+                        item.getPrecedentSerialNumber(),
+                        e);
+
+                continue;
+            }
+        }
+
+        log.info("판례 상세 저장 완료 total = {}, success = {}, notFound = {}, fail = {}",
+                precedents.size(),
+                successCount,
+                notFoundCount,
+                failCount);
     }
 }
 
