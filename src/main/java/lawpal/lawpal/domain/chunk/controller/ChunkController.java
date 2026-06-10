@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lawpal.lawpal.common.response.ApiResponse;
 import lawpal.lawpal.common.response.ApiResponseEnum;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
+import lawpal.lawpal.domain.chunk.dto.response.PrecResponse;
 import lawpal.lawpal.domain.chunk.service.ChunkService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -56,5 +57,24 @@ public class ChunkController {
         chunkService.createPrec();
         ApiResponse<Void> response =  ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
         return  ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/prec-chunks")
+    @Operation(
+            summary = "저장된 판례 청크를 조회합니다.",
+            description = "판시사항, 참조판례, 사건명, 판결요지, 판례내용을 제공합니다."
+    )
+    public ResponseEntity<ApiResponse<PrecResponse>> getPrecList(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        Pageable pageable = PageRequest.of(page - 1, size);
+
+        PrecResponse response = chunkService.getPrecs(pageable);
+
+        ApiResponse<PrecResponse> apiResponse =
+                ApiResponse.successWithData(response, ApiResponseEnum.GET_SUCCESS);
+
+        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
     }
 }

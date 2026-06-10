@@ -2,6 +2,8 @@ package lawpal.lawpal.domain.chunk.service;
 
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponseItem;
+import lawpal.lawpal.domain.chunk.dto.response.PrecChunkResponseItem;
+import lawpal.lawpal.domain.chunk.dto.response.PrecResponse;
 import lawpal.lawpal.domain.chunk.entity.Chunk;
 import lawpal.lawpal.domain.chunk.entity.PrecChunk;
 import lawpal.lawpal.domain.chunk.enums.LawChunkType;
@@ -162,5 +164,20 @@ public class ChunkService {
         }
 
         precChunkRepository.saveAll(chunks);
+    }
+
+    public PrecResponse getPrecs(Pageable pageable) {
+        Page<PrecChunk> precs = precChunkRepository.findAll(pageable);
+
+        List<PrecChunkResponseItem> list = precs.getContent().stream()
+                .map(PrecChunkResponseItem::new)
+                .toList();
+
+        return PrecResponse.builder()
+                .list(list)
+                .currentPage(precs.getNumber() + 1)
+                .totalPages(precs.getTotalPages())
+                .totalElements(precs.getTotalElements())
+                .build();
     }
 }
