@@ -2,6 +2,7 @@ package lawpal.lawpal.domain.chunk.entity;
 
 import jakarta.persistence.*;
 import lawpal.lawpal.common.entity.Timestamped;
+import lawpal.lawpal.domain.chunk.enums.LawChunkType;
 import lawpal.lawpal.domain.law.entity.Law;
 import lombok.*;
 

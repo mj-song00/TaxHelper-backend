@@ -1,7 +1,7 @@
 package lawpal.lawpal.domain.chunk.dto.response;
 
 import lawpal.lawpal.domain.chunk.entity.Chunk;
-import lawpal.lawpal.domain.chunk.entity.LawChunkType;
+import lawpal.lawpal.domain.chunk.enums.LawChunkType;
 import lombok.Getter;
 
 @Getter

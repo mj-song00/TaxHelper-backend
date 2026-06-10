@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/laws/chunks")
+@RequestMapping("/api/v1/chunks")
 @Tag(name = "청크 생성 API ", description = "저장된 내용을 바탕으로 청크를 수동으로 생성합니다.")
-public class LawChunkController {
+public class ChunkController {
 
     private final ChunkService chunkService;
 
@@ -48,5 +48,13 @@ public class LawChunkController {
                 ApiResponse.successWithData(response, ApiResponseEnum.GET_SUCCESS);
 
         return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+    }
+
+    @PostMapping("/prec-chunks")
+    @Operation(summary = "판시사항, 참조판례, 사건명, 판결요지, 판례내용 단위로 청크를 저장합니다.")
+    public ResponseEntity<ApiResponse<Void>> createPrecChunks(){
+        chunkService.createPrec();
+        ApiResponse<Void> response =  ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
+        return  ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }

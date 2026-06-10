@@ -3,14 +3,19 @@ package lawpal.lawpal.domain.chunk.service;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponseItem;
 import lawpal.lawpal.domain.chunk.entity.Chunk;
-import lawpal.lawpal.domain.chunk.entity.LawChunkType;
+import lawpal.lawpal.domain.chunk.entity.PrecChunk;
+import lawpal.lawpal.domain.chunk.enums.LawChunkType;
+import lawpal.lawpal.domain.chunk.enums.PrecChunkType;
 import lawpal.lawpal.domain.chunk.repository.ChunkRepository;
+import lawpal.lawpal.domain.chunk.repository.PrecChunkRepository;
 import lawpal.lawpal.domain.law.entity.LawAmendment;
 import lawpal.lawpal.domain.law.entity.LawArticle;
 import lawpal.lawpal.domain.law.entity.LawSupplement;
 import lawpal.lawpal.domain.law.repository.LawAmendmentRepository;
 import lawpal.lawpal.domain.law.repository.LawArticleRepository;
 import lawpal.lawpal.domain.law.repository.LawSupplementRepository;
+import lawpal.lawpal.domain.precedent.entity.Precedent;
+import lawpal.lawpal.domain.precedent.repository.PrecedentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +34,8 @@ public class ChunkService {
     private final LawSupplementRepository lawSupplementRepository;
     private final LawAmendmentRepository lawAmendmentRepository;
     private final ChunkRepository chunkRepository;
+    private final PrecedentRepository precedentRepository;
+    private final PrecChunkRepository precChunkRepository;
 
 
     public void createChunks() {
@@ -108,5 +115,52 @@ public class ChunkService {
                 .totalPages(chunks.getTotalPages())
                 .totalElements(chunks.getTotalElements())
                 .build();
+    }
+
+    public void createPrec() {
+
+        precChunkRepository.deleteAllInBatch();
+
+        List<PrecChunk> chunks = new ArrayList<>();
+
+        List<Precedent> precedents = precedentRepository.findAll();
+
+        for (Precedent precedent : precedents) {
+
+            if (precedent.getIssue() != null && !precedent.getIssue().isBlank()) {
+                PrecChunk chunk = PrecChunk.builder()
+                        .precedent(precedent)
+                        .chunkType(PrecChunkType.ISSUE)
+                        .title("판시사항")
+                        .content(precedent.getIssue())
+                        .build();
+
+                chunks.add(chunk);
+            }
+
+            if (precedent.getJudgmentSummary() != null && !precedent.getJudgmentSummary().isBlank()) {
+                PrecChunk chunk = PrecChunk.builder()
+                        .precedent(precedent)
+                        .chunkType(PrecChunkType.SUMMARY)
+                        .title("판결요지")
+                        .content(precedent.getJudgmentSummary())
+                        .build();
+
+                chunks.add(chunk);
+            }
+
+            if (precedent.getFullText() != null && !precedent.getFullText().isBlank()) {
+                PrecChunk chunk = PrecChunk.builder()
+                        .precedent(precedent)
+                        .chunkType(PrecChunkType.FULL_TEXT)
+                        .title("판례내용")
+                        .content(precedent.getFullText())
+                        .build();
+
+                chunks.add(chunk);
+            }
+        }
+
+        precChunkRepository.saveAll(chunks);
     }
 }
