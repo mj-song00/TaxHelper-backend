@@ -1,5 +1,7 @@
 package lawpal.lawpal.domain.chunk.service;
 
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponseItem;
 import lawpal.lawpal.domain.chunk.dto.response.PrecChunkResponseItem;
@@ -10,9 +12,7 @@ import lawpal.lawpal.domain.chunk.enums.LawChunkType;
 import lawpal.lawpal.domain.chunk.enums.PrecChunkType;
 import lawpal.lawpal.domain.chunk.repository.ChunkRepository;
 import lawpal.lawpal.domain.chunk.repository.PrecChunkRepository;
-import lawpal.lawpal.domain.law.entity.LawAmendment;
-import lawpal.lawpal.domain.law.entity.LawArticle;
-import lawpal.lawpal.domain.law.entity.LawSupplement;
+import lawpal.lawpal.domain.law.entity.*;
 import lawpal.lawpal.domain.law.repository.LawAmendmentRepository;
 import lawpal.lawpal.domain.law.repository.LawArticleRepository;
 import lawpal.lawpal.domain.law.repository.LawSupplementRepository;
@@ -21,6 +21,7 @@ import lawpal.lawpal.domain.precedent.repository.PrecedentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,12 +56,43 @@ public class ChunkService {
                 title += " " + article.getArticleTitle();
             }
 
+            StringBuilder content = new StringBuilder();
+
+            if (article.getArticleContent() != null && !article.getArticleContent().isBlank()) {
+                content.append(article.getArticleContent()).append("\n");
+            }
+
+            for (LawParagraph paragraph : article.getParagraphs()) {
+
+                if (paragraph.getContent() != null && !paragraph.getContent().isBlank()) {
+                    content.append(paragraph.getContent()).append("\n");
+                }
+
+                for (LawSubparagraph subparagraph : paragraph.getSubparagraphs()) {
+
+                    if (subparagraph.getContent() != null && !subparagraph.getContent().isBlank()) {
+                        content.append(subparagraph.getContent()).append("\n");
+                    }
+
+                    for (LawItem item : subparagraph.getItemList()) {
+
+                        if (item.getContent() != null && !item.getContent().isBlank()) {
+                            content.append(item.getContent()).append("\n");
+                        }
+                    }
+                }
+            }
+
+            if (content.isEmpty()) {
+                continue;
+            }
+
             Chunk chunk = Chunk.builder()
                     .law(article.getLaw())
                     .chunkType(LawChunkType.ARTICLE)
                     .sourceId(article.getId())
                     .title(title)
-                    .content(article.getArticleContent())
+                    .content(content.toString().trim())
                     .build();
 
             chunks.add(chunk);
@@ -73,6 +105,10 @@ public class ChunkService {
 
             if (supplement.getProclamationNumber() != null && !supplement.getProclamationNumber().isBlank()) {
                 title += " " + supplement.getProclamationNumber();
+            }
+
+            if (supplement.getContent() == null || supplement.getContent().isBlank()) {
+                continue;
             }
 
             Chunk chunk = Chunk.builder()
@@ -89,6 +125,10 @@ public class ChunkService {
         List<LawAmendment> amendments = lawAmendmentRepository.findAll();
 
         for (LawAmendment amendment : amendments) {
+            if (amendment.getContent() == null || amendment.getContent().isBlank()) {
+                continue;
+            }
+
             Chunk chunk = Chunk.builder()
                     .law(amendment.getLaw())
                     .chunkType(LawChunkType.AMENDMENT)
@@ -104,8 +144,78 @@ public class ChunkService {
     }
 
 
-    public ChunkResponse getChunks(Pageable pageable) {
-        Page<Chunk> chunks = chunkRepository.findAll(pageable);
+    public ChunkResponse getChunks(
+            Pageable pageable,
+            List<String> keywords,
+            String query,
+            List<String> lawNames
+    ) {
+        Specification<Chunk> spec = (root, criteriaQuery, criteriaBuilder) -> {
+            criteriaQuery.distinct(true);
+
+            List<Predicate> andPredicates = new ArrayList<>();
+
+            if (query != null && !query.isBlank()) {
+                String[] queryTerms = query.trim().split("\\s+");
+
+                List<Predicate> queryPredicates = new ArrayList<>();
+
+                for (String term : queryTerms) {
+                    if (term.isBlank()) {
+                        continue;
+                    }
+
+                    String likeTerm = "%" + term.trim() + "%";
+
+                    queryPredicates.add(
+                            criteriaBuilder.or(
+                                    criteriaBuilder.like(root.get("title"), likeTerm),
+                                    criteriaBuilder.like(root.get("content"), likeTerm)
+                            )
+                    );
+                }
+
+                if (!queryPredicates.isEmpty()) {
+                    andPredicates.add(
+                            criteriaBuilder.or(queryPredicates.toArray(new Predicate[0]))
+                    );
+                }
+            }
+
+            if (keywords != null && !keywords.isEmpty()) {
+                List<Predicate> keywordPredicates = new ArrayList<>();
+
+                for (String keyword : keywords) {
+                    if (keyword == null || keyword.isBlank()) {
+                        continue;
+                    }
+
+                    String likeKeyword = "%" + keyword.trim() + "%";
+
+                    keywordPredicates.add(
+                            criteriaBuilder.or(
+                                    criteriaBuilder.like(root.get("title"), likeKeyword),
+                                    criteriaBuilder.like(root.get("content"), likeKeyword)
+                            )
+                    );
+                }
+
+                if (!keywordPredicates.isEmpty()) {
+                    andPredicates.add(
+                            criteriaBuilder.or(keywordPredicates.toArray(new Predicate[0]))
+                    );
+                }
+            }
+
+            if (lawNames != null && !lawNames.isEmpty()) {
+                Join<Chunk, Law> law = root.join("law");
+                andPredicates.add(law.get("name").in(lawNames));
+            }
+
+            return criteriaBuilder.and(andPredicates.toArray(new Predicate[0]));
+        };
+
+        Page<Chunk> chunks = chunkRepository.findAll(spec, pageable);
 
         List<ChunkResponseItem> list = chunks.getContent().stream()
                 .map(ChunkResponseItem::new)
@@ -146,6 +256,28 @@ public class ChunkService {
                         .chunkType(PrecChunkType.SUMMARY)
                         .title("판결요지")
                         .content(precedent.getJudgmentSummary())
+                        .build();
+
+                chunks.add(chunk);
+            }
+
+            if (precedent.getReferenceArticles() != null && !precedent.getReferenceArticles().isBlank()) {
+                PrecChunk chunk = PrecChunk.builder()
+                        .precedent(precedent)
+                        .chunkType(PrecChunkType.REFERENCE_ARTICLE)
+                        .title("참조조문")
+                        .content(precedent.getReferenceArticles())
+                        .build();
+
+                chunks.add(chunk);
+            }
+
+            if (precedent.getReferenceCases() != null && !precedent.getReferenceCases().isBlank()) {
+                PrecChunk chunk = PrecChunk.builder()
+                        .precedent(precedent)
+                        .chunkType(PrecChunkType.REFERENCE_CASE)
+                        .title("참조판례")
+                        .content(precedent.getReferenceCases())
                         .build();
 
                 chunks.add(chunk);

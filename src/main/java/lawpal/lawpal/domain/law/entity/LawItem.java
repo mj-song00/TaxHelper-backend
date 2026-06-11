@@ -2,10 +2,7 @@ package lawpal.lawpal.domain.law.entity;
 
 import jakarta.persistence.*;
 import lawpal.lawpal.common.entity.Timestamped;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
  * 목에 대한 table입니다.
@@ -16,6 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "law_items")
+@Getter
 public class LawItem extends Timestamped {
 
     @Id

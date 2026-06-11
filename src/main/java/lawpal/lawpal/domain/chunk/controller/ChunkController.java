@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/chunks")
@@ -37,12 +39,21 @@ public class ChunkController {
     )
     public  ResponseEntity<ApiResponse<ChunkResponse>>  getList(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) List<String> keywords,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) List<String> lawNames
+
     ) {
 
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        ChunkResponse response = chunkService.getChunks(pageable);
+        ChunkResponse response = chunkService.getChunks(
+                pageable,
+                keywords,
+                query,
+                lawNames
+        );
 
 
         ApiResponse<ChunkResponse> apiResponse =
