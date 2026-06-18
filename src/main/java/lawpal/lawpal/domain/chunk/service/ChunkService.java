@@ -2,6 +2,7 @@ package lawpal.lawpal.domain.chunk.service;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import lawpal.lawpal.domain.cases.entity.Case;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponseItem;
 import lawpal.lawpal.domain.chunk.dto.response.PrecChunkResponseItem;
@@ -668,6 +669,66 @@ public class ChunkService {
         precChunkRepository.saveAll(chunks);
     }
 
+    public PrecResponse getPrecs(
+            Pageable pageable,
+            List<String> keywords,
+            String query,
+            List<String> courtNames,
+            List<String> caseNumbers
+    ) {
+        List<String> searchTerms = buildSearchTerms(query, keywords);
+
+        Specification<PrecChunk> spec = buildPrecChunkSearchSpec(
+                searchTerms,
+                courtNames,
+                caseNumbers
+        );
+
+        if (searchTerms.isEmpty() && isBlankList(courtNames) && isBlankList(caseNumbers)) {
+            Page<PrecChunk> precs = precChunkRepository.findAll(pageable);
+
+            List<PrecChunkResponseItem> list = precs.getContent().stream()
+                    .map(PrecChunkResponseItem::new)
+                    .toList();
+
+            return PrecResponse.builder()
+                    .list(list)
+                    .currentPage(precs.getNumber() + 1)
+                    .totalPages(precs.getTotalPages())
+                    .totalElements(precs.getTotalElements())
+                    .build();
+        }
+
+        List<PrecChunk> candidates = precChunkRepository.findAll(spec);
+
+        List<ScoredPrecChunk> ranked = candidates.stream()
+                .map(chunk -> new ScoredPrecChunk(
+                        chunk,
+                        calculatePrecRelevanceScore(chunk, searchTerms, courtNames, caseNumbers)
+                ))
+                .filter(item -> item.score() > 0)
+                .sorted(Comparator.comparingDouble(ScoredPrecChunk::score).reversed())
+                .toList();
+
+        int totalElements = ranked.size();
+        int pageSize = pageable.getPageSize();
+        int currentPage = pageable.getPageNumber() + 1;
+        int totalPages = pageSize == 0 ? 0 : (int) Math.ceil((double) totalElements / pageSize);
+        int fromIndex = Math.min(pageable.getPageNumber() * pageSize, totalElements);
+        int toIndex = Math.min(fromIndex + pageSize, totalElements);
+
+        List<PrecChunkResponseItem> list = ranked.subList(fromIndex, toIndex).stream()
+                .map(item -> new PrecChunkResponseItem(item.chunk(), roundScore(item.score())))
+                .toList();
+
+        return PrecResponse.builder()
+                .list(list)
+                .currentPage(currentPage)
+                .totalPages(totalPages)
+                .totalElements(totalElements)
+                .build();
+    }
+
     public PrecResponse getPrecs(Pageable pageable) {
         Page<PrecChunk> precs = precChunkRepository.findAll(pageable);
 
@@ -681,5 +742,189 @@ public class ChunkService {
                 .totalPages(precs.getTotalPages())
                 .totalElements(precs.getTotalElements())
                 .build();
+    }
+
+    private Specification<PrecChunk> buildPrecChunkSearchSpec(
+            List<String> searchTerms,
+            List<String> courtNames,
+            List<String> caseNumbers
+    ) {
+        return (root, criteriaQuery, criteriaBuilder) -> {
+            criteriaQuery.distinct(true);
+
+            List<Predicate> andPredicates = new ArrayList<>();
+            Join<PrecChunk, Precedent> precedent = root.join("precedent");
+            Join<Precedent, Case> cases = precedent.join("cases");
+
+            if (!searchTerms.isEmpty()) {
+                List<Predicate> termPredicates = new ArrayList<>();
+
+                for (String term : searchTerms) {
+                    if (term == null || term.isBlank()) {
+                        continue;
+                    }
+
+                    String likeTerm = "%" + term.trim().toLowerCase(Locale.ROOT) + "%";
+
+                    termPredicates.add(
+                            criteriaBuilder.or(
+                                    criteriaBuilder.like(criteriaBuilder.lower(root.get("title")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(root.get("content")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(precedent.get("issue")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(precedent.get("judgmentSummary")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(precedent.get("referenceArticles")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(precedent.get("referenceCases")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(cases.get("caseNumber")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(cases.get("caseName")), likeTerm),
+                                    criteriaBuilder.like(criteriaBuilder.lower(cases.get("courtName")), likeTerm)
+                            )
+                    );
+                }
+
+                if (!termPredicates.isEmpty()) {
+                    andPredicates.add(
+                            criteriaBuilder.or(termPredicates.toArray(new Predicate[0]))
+                    );
+                }
+            }
+
+            if (!isBlankList(courtNames)) {
+                List<Predicate> courtPredicates = new ArrayList<>();
+
+                for (String courtName : courtNames) {
+                    if (courtName == null || courtName.isBlank()) {
+                        continue;
+                    }
+
+                    courtPredicates.add(
+                            criteriaBuilder.like(
+                                    criteriaBuilder.lower(cases.get("courtName")),
+                                    "%" + courtName.trim().toLowerCase(Locale.ROOT) + "%"
+                            )
+                    );
+                }
+
+                if (!courtPredicates.isEmpty()) {
+                    andPredicates.add(
+                            criteriaBuilder.or(courtPredicates.toArray(new Predicate[0]))
+                    );
+                }
+            }
+
+            if (!isBlankList(caseNumbers)) {
+                List<Predicate> caseNumberPredicates = new ArrayList<>();
+
+                for (String caseNumber : caseNumbers) {
+                    if (caseNumber == null || caseNumber.isBlank()) {
+                        continue;
+                    }
+
+                    caseNumberPredicates.add(
+                            criteriaBuilder.like(
+                                    criteriaBuilder.lower(cases.get("caseNumber")),
+                                    "%" + caseNumber.trim().toLowerCase(Locale.ROOT) + "%"
+                            )
+                    );
+                }
+
+                if (!caseNumberPredicates.isEmpty()) {
+                    andPredicates.add(
+                            criteriaBuilder.or(caseNumberPredicates.toArray(new Predicate[0]))
+                    );
+                }
+            }
+
+            return criteriaBuilder.and(andPredicates.toArray(new Predicate[0]));
+        };
+    }
+
+    private double calculatePrecRelevanceScore(
+            PrecChunk chunk,
+            List<String> searchTerms,
+            List<String> courtNames,
+            List<String> caseNumbers
+    ) {
+        Case cases = chunk.getPrecedent().getCases();
+        String title = normalizeText(chunk.getTitle());
+        String content = normalizeText(chunk.getContent());
+        String caseName = normalizeText(cases.getCaseName());
+        String caseNumber = normalizeText(cases.getCaseNumber());
+        String courtName = normalizeText(cases.getCourtName());
+
+        double score = 0.0;
+
+        for (String term : searchTerms) {
+            String normalizedTerm = normalizeText(term);
+
+            if (normalizedTerm.isBlank()) {
+                continue;
+            }
+
+            if (title.contains(normalizedTerm)) {
+                score += 8.0;
+            }
+
+            if (caseName.contains(normalizedTerm)) {
+                score += 6.0;
+            }
+
+            if (caseNumber.contains(normalizedTerm)) {
+                score += 10.0;
+            }
+
+            if (courtName.contains(normalizedTerm)) {
+                score += 4.0;
+            }
+
+            int contentHits = countOccurrences(content, normalizedTerm);
+
+            if (contentHits > 0) {
+                score += 2.0 + Math.min(contentHits - 1, 4) * 0.5;
+            }
+        }
+
+        for (String court : safeList(courtNames)) {
+            if (court == null || court.isBlank()) {
+                continue;
+            }
+
+            if (courtName.contains(normalizeText(court))) {
+                score += 10.0;
+            }
+        }
+
+        for (String number : safeList(caseNumbers)) {
+            if (number == null || number.isBlank()) {
+                continue;
+            }
+
+            if (caseNumber.contains(normalizeText(number))) {
+                score += 15.0;
+            }
+        }
+
+        score += switch (chunk.getChunkType()) {
+            case ISSUE -> 12.0;
+            case SUMMARY -> 10.0;
+            case FULL_TEXT -> 6.0;
+            case REFERENCE_ARTICLE, REFERENCE_CASE -> 3.0;
+        };
+
+        return score;
+    }
+
+    private boolean isBlankList(List<String> values) {
+        return values == null || values.stream().allMatch(value -> value == null || value.isBlank());
+    }
+
+    private List<String> safeList(List<String> values) {
+        if (values == null) {
+            return List.of();
+        }
+
+        return values;
+    }
+
+    private record ScoredPrecChunk(PrecChunk chunk, double score) {
     }
 }

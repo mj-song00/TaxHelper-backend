@@ -77,11 +77,21 @@ public class ChunkController {
     )
     public ResponseEntity<ApiResponse<PrecResponse>> getPrecList(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) List<String> keywords,
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) List<String> courtNames,
+            @RequestParam(required = false) List<String> caseNumbers
     ){
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        PrecResponse response = chunkService.getPrecs(pageable);
+        PrecResponse response = chunkService.getPrecs(
+                pageable,
+                keywords,
+                query,
+                courtNames,
+                caseNumbers
+        );
 
         ApiResponse<PrecResponse> apiResponse =
                 ApiResponse.successWithData(response, ApiResponseEnum.GET_SUCCESS);
