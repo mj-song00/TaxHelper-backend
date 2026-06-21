@@ -37,8 +37,10 @@ public class LawController {
 
     @Operation(summary = "법령 상세조회 저장 ", description = "해당 법령을 상세조회 및 저장합니다. 중복값은 제외됩니다.")
     @GetMapping("/detail")
-    public ResponseEntity<ApiResponse<Void>> getDetail(){
-        lawService.saveLawDetail();
+    public ResponseEntity<ApiResponse<Void>> getDetail(
+            @RequestParam(required = false) String lawName
+    ){
+        lawService.saveLawDetail(lawName);
         ApiResponse<Void> response =
                 ApiResponse.successWithOutData(ApiResponseEnum.DATA_SAVED_COMPLETED);
         return ResponseEntity.status(HttpStatus.OK).body(response);

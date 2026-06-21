@@ -4,5 +4,5 @@ import lawpal.lawpal.domain.law.entity.LawSupplement;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface LawSupplementRepository  extends JpaRepository<LawSupplement, Long> {
-    boolean existsBySupplementKey(String SupplementKey);
+    void deleteAllByLaw_Id(Long lawId);
 }

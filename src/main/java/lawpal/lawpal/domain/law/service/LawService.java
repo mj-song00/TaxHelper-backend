@@ -32,6 +32,7 @@ public class LawService {
     private final LawArticleRepository lawArticleRepository;
     private final LawParagraphRepository lawParagraphRepository;
     private final LawSubparagraphRepository lawSubparagraphRepository;
+    private final LawItemRepository lawItemRepository;
     private final LawSupplementRepository lawSupplementRepository;
     private final LawTypeRepository lawTypeRepository;
 
@@ -169,7 +170,13 @@ public class LawService {
     }
 
     public void saveLawDetail() {
-        List<Law> laws = lawRepository.findAll();
+        saveLawDetail(null);
+    }
+
+    public void saveLawDetail(String lawName) {
+        List<Law> laws = lawName == null || lawName.isBlank()
+                ? lawRepository.findAll()
+                : lawRepository.findAllByName(lawName.trim());
 
         int index = 0;
         for (Law law : laws) {
@@ -191,6 +198,12 @@ public class LawService {
             }
 
             BasicInfo basicInfo = detail.get기본정보();
+
+            // 재수집 시 기존 하위 데이터를 남겨 중복시키지 않는다.
+            // LawArticle 삭제는 paragraph/subparagraph/item까지 cascade 된다.
+            lawArticleRepository.deleteAllByLaw_Id(law.getId());
+            lawSupplementRepository.deleteAllByLaw_Id(law.getId());
+            lawAmendmentRepository.deleteAllByLaw_Id(law.getId());
 
             Law updateLaw = Law.builder()
                     .id(law.getId())
@@ -264,7 +277,23 @@ public class LawService {
                                             .content(subparagraphRequest.getContent() != null ? subparagraphRequest.getContent() : "")
                                             .build();
 
-                                    lawSubparagraphRepository.save(subparagraph);
+                                    subparagraph = lawSubparagraphRepository.save(subparagraph);
+
+                                    if (subparagraphRequest.getSubItem() != null) {
+                                        for (LawItemRequest itemRequest : subparagraphRequest.getSubItem()) {
+                                            if (itemRequest.getSubContent() == null || itemRequest.getSubContent().isEmpty()) {
+                                                continue;
+                                            }
+
+                                            LawItem item = LawItem.builder()
+                                                    .lawSubparagraph(subparagraph)
+                                                    .itemNumber(itemRequest.getSubNo() != null ? itemRequest.getSubNo() : "0")
+                                                    .content(String.join("\n", itemRequest.getSubContent()))
+                                                    .build();
+
+                                            lawItemRepository.save(item);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -311,6 +340,10 @@ public class LawService {
                     && basicInfo.getDepartment().getUnits() != null) {
 
                 for (DepartmentUnitRequest departmentRequest : basicInfo.getDepartment().getUnits()) {
+
+                    if (departmentRepository.existsByDepartmentKey(departmentRequest.getDepartmentKey())) {
+                        continue;
+                    }
 
                     Department department = Department.builder()
                             .law(updateLaw)
