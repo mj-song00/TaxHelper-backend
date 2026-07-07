@@ -169,10 +169,6 @@ public class LawService {
         System.out.println("공동부처 저장 개수 = " + jointMinistryCount);
     }
 
-    public void saveLawDetail() {
-        saveLawDetail(null);
-    }
-
     public void saveLawDetail(String lawName) {
         List<Law> laws = lawName == null || lawName.isBlank()
                 ? lawRepository.findAll()
