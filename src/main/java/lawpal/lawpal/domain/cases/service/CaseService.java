@@ -13,6 +13,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import java.util.List;
 
@@ -119,7 +123,6 @@ public class CaseService {
 
         for (Precedent item : precedents) {
 
-
             log.info("판례 저장 진행 {}/{} id = {}, precedentSerialNumber = {}",
                     item.getId(),
                     precedents.size(),
@@ -127,59 +130,251 @@ public class CaseService {
                     item.getPrecedentSerialNumber());
 
             try {
+                String fullText = null;
+                String issue = null;
+                String referenceArticles = null;
+                String referenceCases = null;
+                String judgmentSummary = null;
+
+                /*
+                 * 1. 기존 JSON 상세 조회
+                 */
                 PrecedentRequest detail =
                         lawApiClient.fetchPrecDetail(item.getPrecedentSerialNumber());
 
-                if (detail == null || detail.getPrecService() == null) {
-                    notFoundCount++;
+                if (detail != null && detail.getPrecService() != null) {
+                    PrecedentDetailRequest precService = detail.getPrecService();
 
-                    log.warn("판례 상세 없음 스킵 id = {}, precedentSerialNumber = {}",
+                    fullText = precService.get판례내용();
+                    issue = precService.get판시사항();
+                    referenceArticles = precService.get참조조문();
+                    referenceCases = precService.get참조판례();
+                    judgmentSummary = precService.get판결요지();
+
+                    log.info("JSON 판례 상세 조회 성공 id = {}, precedentSerialNumber = {}",
+                            item.getId(),
+                            item.getPrecedentSerialNumber());
+                }
+
+                /*
+                 * JSON 응답이 없거나 판례 본문이 없다면
+                 * 국세법령정보시스템 HTML 상세 조회
+                 */
+                if (fullText == null || fullText.isBlank()) {
+                    String detailUrl =
+                            "https://www.law.go.kr/LSW/precInfoP.do"
+                                    + "?precSeq="
+                                    + item.getPrecedentSerialNumber()
+                                    + "&mode=0";
+
+                    log.info("HTML 판례 상세 조회 시작 id = {}, url = {}",
+                            item.getId(),
+                            detailUrl);
+
+                    Document document = Jsoup.connect(detailUrl)
+                            .userAgent(
+                                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                                            + "AppleWebKit/537.36 "
+                                            + "(KHTML, like Gecko) "
+                                            + "Chrome/149.0.0.0 Safari/537.36"
+                            )
+                            .referrer("https://www.law.go.kr/")
+                            .timeout(150_000)
+                            .get();
+
+                    /*
+                     * 불필요한 화면 요소 제거
+                     */
+                    document.select(
+                            "script, style, iframe, nav, header, footer, "
+                                    + "button, input, form, noscript"
+                    ).remove();
+
+                    /*
+                     * 테이블 형태 데이터 파싱
+                     *
+                     * 예:
+                     * <tr>
+                     *     <th>판시사항</th>
+                     *     <td>내용</td>
+                     * </tr>
+                     */
+                    for (Element row : document.select("tr")) {
+                        Elements children = row.children();
+
+                        if (children.size() < 2) {
+                            continue;
+                        }
+
+                        String label = children.get(0)
+                                .text()
+                                .replaceAll("\\s+", "")
+                                .replace("：", ":")
+                                .replace(":", "");
+
+                        String value = children.get(1).text().trim();
+
+                        if (value.isBlank()) {
+                            continue;
+                        }
+
+                        if ("판시사항".equals(label)) {
+                            issue = value;
+                        } else if ("판결요지".equals(label)) {
+                            judgmentSummary = value;
+                        } else if ("참조조문".equals(label)) {
+                            referenceArticles = value;
+                        } else if ("참조판례".equals(label)) {
+                            referenceCases = value;
+                        } else if ("판례내용".equals(label)
+                                || "판결내용".equals(label)
+                                || "전문".equals(label)
+                                || "판결문".equals(label)) {
+                            fullText = value;
+                        }
+                    }
+
+                    /*
+                     * dt/dd 형태 데이터 파싱
+                     *
+                     * 예:
+                     * <dt>판시사항</dt>
+                     * <dd>내용</dd>
+                     */
+                    for (Element dt : document.select("dt")) {
+                        Element dd = dt.nextElementSibling();
+
+                        if (dd == null || !"dd".equalsIgnoreCase(dd.tagName())) {
+                            continue;
+                        }
+
+                        String label = dt.text()
+                                .replaceAll("\\s+", "")
+                                .replace("：", ":")
+                                .replace(":", "");
+
+                        String value = dd.text().trim();
+
+                        if (value.isBlank()) {
+                            continue;
+                        }
+
+                        if ("판시사항".equals(label)) {
+                            issue = value;
+                        } else if ("판결요지".equals(label)) {
+                            judgmentSummary = value;
+                        } else if ("참조조문".equals(label)) {
+                            referenceArticles = value;
+                        } else if ("참조판례".equals(label)) {
+                            referenceCases = value;
+                        } else if ("판례내용".equals(label)
+                                || "판결내용".equals(label)
+                                || "전문".equals(label)
+                                || "판결문".equals(label)) {
+                            fullText = value;
+                        }
+                    }
+
+                    /*
+                     * 표 구조에서 판례 전문을 찾지 못한 경우
+                     * 본문 영역 후보를 확인
+                     */
+                    if (fullText == null || fullText.isBlank()) {
+                        Elements contentElements = document.select(
+                                "#contentBody, "
+                                        + "#content, "
+                                        + "#bodyContent, "
+                                        + ".contentBody, "
+                                        + ".content, "
+                                        + ".conBox, "
+                                        + ".lawcon, "
+                                        + ".lawContent, "
+                                        + ".precContent"
+                        );
+
+                        String contentText = contentElements.text().trim();
+
+                        if (!contentText.isBlank()) {
+                            fullText = contentText;
+                        }
+                    }
+
+                    /*
+                     * 사이트의 HTML 구조를 아직 정확히 특정하지 못한 경우를 위한
+                     * 마지막 fallback
+                     */
+                    if (fullText == null || fullText.isBlank()) {
+                        String bodyText = document.body() == null
+                                ? null
+                                : document.body().text().trim();
+
+                        if (bodyText != null
+                                && !bodyText.isBlank()
+                                && !bodyText.contains("요청하신 판례가 존재하지 않습니다")) {
+                            fullText = bodyText;
+                        }
+                    }
+
+                    log.info("HTML 판례 상세 조회 완료 id = {}, precedentSerialNumber = {}",
+                            item.getId(),
+                            item.getPrecedentSerialNumber());
+                }
+
+                /*
+                 * JSON과 HTML 모두 본문을 가져오지 못한 경우
+                 */
+                if (fullText == null || fullText.isBlank()) {
+                    notFoundCount++;
+                    item.updateStatus(PrecedentStatus.DETAIL_FAILED);
+
+                    log.warn("판례 상세 없음 id = {}, precedentSerialNumber = {}",
                             item.getId(),
                             item.getPrecedentSerialNumber());
 
                     continue;
                 }
 
-                PrecedentDetailRequest precService = detail.getPrecService();
-
-                log.info("판례내용 length = {}",
-                        precService.get판례내용() == null ? 0 : precService.get판례내용().length());
+                log.info("판례내용 length = {}", fullText.length());
                 log.info("판시사항 length = {}",
-                        precService.get판시사항() == null ? 0 : precService.get판시사항().length());
+                        issue == null ? 0 : issue.length());
                 log.info("참조조문 length = {}",
-                        precService.get참조조문() == null ? 0 : precService.get참조조문().length());
+                        referenceArticles == null ? 0 : referenceArticles.length());
                 log.info("참조판례 length = {}",
-                        precService.get참조판례() == null ? 0 : precService.get참조판례().length());
+                        referenceCases == null ? 0 : referenceCases.length());
                 log.info("판결요지 length = {}",
-                        precService.get판결요지() == null ? 0 : precService.get판결요지().length());
+                        judgmentSummary == null ? 0 : judgmentSummary.length());
 
                 item.updateDetail(
-                        precService.get판례내용(),
-                        precService.get판시사항(),
-                        precService.get참조조문(),
-                        precService.get참조판례(),
-                        precService.get판결요지()
+                        fullText,
+                        issue,
+                        referenceArticles,
+                        referenceCases,
+                        judgmentSummary
                 );
+
                 item.updateStatus(PrecedentStatus.DETAIL_SAVED);
                 successCount++;
 
             } catch (Exception e) {
                 failCount++;
                 item.updateStatus(PrecedentStatus.DETAIL_FAILED);
-                log.error("판례 상세 저장 실패 후 스킵  id = {}, precedentSerialNumber = {}",
+
+                log.error(
+                        "판례 상세 저장 실패 후 스킵 id = {}, precedentSerialNumber = {}",
                         item.getId(),
                         item.getPrecedentSerialNumber(),
-                        e);
-
-                continue;
+                        e
+                );
             }
         }
 
-        log.info("판례 상세 저장 완료 total = {}, success = {}, notFound = {}, fail = {}",
+        log.info(
+                "판례 상세 저장 완료 total = {}, success = {}, notFound = {}, fail = {}",
                 precedents.size(),
                 successCount,
                 notFoundCount,
-                failCount);
+                failCount
+        );
     }
 }
 
