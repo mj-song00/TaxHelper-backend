@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 - TaxHelper</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+</head>
+<body class="auth-page">
+<header class="auth-header">
+    <a class="brand" th:href="@{/}"><span class="brand-mark">T</span><span>TaxHelper</span></a>
+</header>
+<main class="auth-main">
+    <section class="auth-card">
+        <div class="auth-copy">
+            <span class="eyebrow">다시 만나서 반가워요</span>
+            <h1>로그인</h1>
+            <p>이전에 나눈 질문과 답변을<br>언제든 이어서 확인하세요.</p>
+        </div>
+        <form class="auth-form" th:action="@{/login}" method="post">
+            <label for="email">이메일</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+            <label for="password">비밀번호</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" placeholder="비밀번호를 입력해 주세요" required>
+            <button class="button button-primary button-wide" type="submit">로그인</button>
+            <button class="button kakao-button button-wide" type="button"><span>K</span> 카카오로 시작하기</button>
+            <p class="auth-link">아직 계정이 없으신가요? <a th:href="@{/signup}">회원가입</a></p>
+        </form>
+    </section>
+</main>
+</body>
+</html>
