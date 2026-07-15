@@ -54,6 +54,13 @@ public class JwtFilter  implements Filter {
 
         String url = httpRequest.getRequestURI();
 
+        // Thymeleaf 화면은 인증 여부와 관계없이 렌더링합니다.
+        if (url.equals("/") || url.equals("/home") || url.equals("/login") || url.equals("/signup")
+                || url.equals("/api/ui/chat") || url.startsWith("/api/ui/sources/")) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         // Swagger 경로는 JWT 검증 없이 통과
         if (SWAGGER_WHITELIST.stream().anyMatch(path::startsWith)) {
             chain.doFilter(request, response);
