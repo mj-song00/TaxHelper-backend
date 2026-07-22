@@ -47,7 +47,7 @@ FastAPI AI Service
 - Spring Boot Backend
 - FastAPI AI Service
 - Ollama 0.30.7
-- LLM Model: `qwen3:8b`
+- LLM Model: `qwen3:4b`(`Q4_K_M`)
 
 > Spring Boot Backend는 단독으로 회원가입, 로그인, 법령,판례 수집 및 검색 API를 실행할 수 있습니다.
 사용자 질문 분석부터 LLM답변 생성까지 전체 질의응답 기능을 실행하려면 Fast API AI Service와 Ollama가 추가로 필요합니다.
