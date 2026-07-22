@@ -1,3 +1,4 @@
+
 # 1. 프로젝트 소개 
 TaxHelper는 국가법령정보센터의 법령 및 판례 데이터를 수집·구조화하고, 질문과 관련된 근거를 검색한 뒤 해당 근거를 바탕으로 답변을 생성하는 RAG 기반 세법 질의응답 서비스입니다.
 
@@ -108,7 +109,11 @@ JWT_SECRET_KEY=your_jwt_secret_key
 > 국가법령정보센터 Open API가 제공하는 중첩형 법령 데이터를 조회 및 검색하기 쉬운 관계형 구조로 관리하기 위해 법령·조문·항·호·목을 각각의 엔티티로 분리했으며, 부칙과 개정문도 별도 구조로 저장했습니다.
 
 # 7. API 목록 
+<img width="1466" height="819" alt="스크린샷 2026-07-22 오전 10 43 56" src="https://github.com/user-attachments/assets/ace01ce0-9a54-454f-a7cc-1a0fa99afd97" />
+<img width="1461" height="753" alt="스크린샷 2026-07-22 오전 10 44 16" src="https://github.com/user-attachments/assets/820dbe43-c71a-4b6c-b821-a4ada3b61732" />
 
 # 8. 기술적 고민과 의사 결정
 
+
 # 9. 트러블 슈팅 
+
