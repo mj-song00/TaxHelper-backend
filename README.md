@@ -174,12 +174,16 @@ JWT_SECRET_KEY=your_jwt_secret_key
 
 #### 문제
 동일한 API 필드가 데이터 개수에 따라 배열 또는 단일 객체 형태로 반환되어 역직렬화 오류가 발생했습니다.
+<img width="2048" height="130" alt="image" src="https://github.com/user-attachments/assets/18a50013-3cef-4d19-95d1-9dfb452e0889" />
 
 #### 원인
 응답 데이터가 여러 건일 때는 JSON 배열로 반환되지만, 한 건일 때는 단일 객체로 반환되는 비일관적인 응답 구조 때문이었습니다.
+<img width="853" height="327" alt="image" src="https://github.com/user-attachments/assets/88923b9c-8f12-41c9-87cc-96479599f30a" />
+<img width="885" height="308" alt="image" src="https://github.com/user-attachments/assets/c49c956b-a0cd-4e0d-af51-4ea62343d8f5" />
 
 #### 해결
 응답 타입을 하나의 형태로 고정해서 처리하지 않고, 배열과 단일 객체를 모두 처리할 수 있도록 변환 로직을 추가했습니다.
+<img width="645" height="465" alt="image" src="https://github.com/user-attachments/assets/83947e08-78f2-44a2-a6ea-87fa1674a8c9" />
 
 #### 결과
 데이터 개수와 관계없이 동일한 저장 로직으로 처리할 수 있도록 API 응답 처리를 안정화했습니다.
