@@ -56,7 +56,8 @@ public class JwtFilter  implements Filter {
 
         // Thymeleaf 화면은 인증 여부와 관계없이 렌더링합니다.
         if (url.equals("/") || url.equals("/home") || url.equals("/login") || url.equals("/signup")
-                || url.equals("/api/ui/chat") || url.startsWith("/api/ui/sources/")) {
+                || url.equals("/api/ui/chat") || url.startsWith("/api/ui/chat/jobs")
+                || url.startsWith("/api/ui/sources/") || url.startsWith("/api/internal/chat/jobs")) {
             chain.doFilter(request, response);
             return;
         }
