@@ -24,7 +24,9 @@ public enum ExceptionEnum {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "INVALID_REFRESH_TOKEN", "잘못된 리프레시 토큰입니다."),
 
     API_CALL_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR","API 호출에 실패하였습니다." ),
-    API_MATCHING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR","API 매칭에 실패하였습니다.");
+    API_MATCHING_FAILED(HttpStatus.INTERNAL_SERVER_ERROR,"INTERNAL_SERVER_ERROR","API 매칭에 실패하였습니다."),
+    CHAT_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_JOB_NOT_FOUND", "ChatJob을 찾을 수 없습니다."),
+    INVALID_CHAT_JOB_STATUS(HttpStatus.CONFLICT, "INVALID_CHAT_JOB_STATUS", "ChatJob 상태가 올바르지 않습니다.");
     private final HttpStatus status;
     private final String errorCode;
     private final String message;
