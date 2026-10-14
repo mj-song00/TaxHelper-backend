@@ -1,5 +1,6 @@
 package lawpal.lawpal.domain.law.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ public class SubParagraphRequest {
     private String branchNO;
 
     @JsonProperty("목")
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
     private List<LawItemRequest> subItem = new ArrayList<>();
 
     public String getContent() {
