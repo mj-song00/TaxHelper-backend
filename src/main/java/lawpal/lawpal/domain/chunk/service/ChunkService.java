@@ -2,7 +2,6 @@ package lawpal.lawpal.domain.chunk.service;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
-import lawpal.lawpal.domain.chunk.dto.request.VectorChunkSearchRequest;
 import lawpal.lawpal.domain.cases.entity.Case;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponse;
 import lawpal.lawpal.domain.chunk.dto.response.ChunkResponseItem;
@@ -216,71 +215,6 @@ public class ChunkService {
                 .build();
     }
 
-
-    public ChunkResponse getChunksByVectorSearch(
-            Pageable pageable,
-            VectorChunkSearchRequest request
-    ) {
-        String queryEmbedding = toVectorLiteral(request.getQueryEmbedding());
-        List<String> lawNames = cleanFilterValues(request.getLawNames());
-        int limit = pageable.getPageSize();
-        int offset = Math.toIntExact(pageable.getOffset());
-
-        List<Chunk> chunks = lawNames.isEmpty()
-                ? chunkRepository.findNearestByEmbedding(queryEmbedding, limit, offset)
-                : chunkRepository.findNearestByEmbeddingAndLawNames(queryEmbedding, lawNames, limit, offset);
-
-        List<ChunkResponseItem> list = chunks.stream()
-                .map(ChunkResponseItem::new)
-                .toList();
-
-        return ChunkResponse.builder()
-                .list(list)
-                .currentPage(pageable.getPageNumber() + 1)
-                .totalPages(estimateVectorTotalPages(chunks.size(), limit, pageable.getPageNumber()))
-                .totalElements((long) chunks.size())
-                .build();
-    }
-
-
-    private String toVectorLiteral(List<Double> embedding) {
-        if (embedding == null || embedding.isEmpty()) {
-            throw new IllegalArgumentException("queryEmbedding is required for vector search.");
-        }
-
-        StringBuilder builder = new StringBuilder("[");
-        for (int index = 0; index < embedding.size(); index++) {
-            Double value = embedding.get(index);
-            if (value == null) {
-                throw new IllegalArgumentException("queryEmbedding must not contain null values.");
-            }
-            if (index > 0) {
-                builder.append(',');
-            }
-            builder.append(value);
-        }
-        return builder.append(']').toString();
-    }
-
-    private List<String> cleanFilterValues(List<String> values) {
-        if (values == null) {
-            return List.of();
-        }
-
-        return values.stream()
-                .filter(value -> value != null && !value.isBlank())
-                .map(String::trim)
-                .distinct()
-                .toList();
-    }
-
-    private int estimateVectorTotalPages(int currentResultSize, int pageSize, int pageNumber) {
-        if (currentResultSize == 0 || pageSize <= 0) {
-            return pageNumber == 0 ? 0 : pageNumber + 1;
-        }
-
-        return currentResultSize == pageSize ? pageNumber + 2 : pageNumber + 1;
-    }
 
     private Specification<Chunk> buildChunkSearchSpec(
             List<String> searchTerms,
@@ -795,37 +729,6 @@ public class ChunkService {
                 .build();
     }
 
-
-    public PrecResponse getPrecsByVectorSearch(
-            Pageable pageable,
-            VectorChunkSearchRequest request
-    ) {
-        String queryEmbedding = toVectorLiteral(request.getQueryEmbedding());
-        List<String> courtNames = cleanFilterValues(request.getCourtNames());
-        List<String> caseNumbers = cleanFilterValues(request.getCaseNumbers());
-        int limit = pageable.getPageSize();
-        int offset = Math.toIntExact(pageable.getOffset());
-
-        List<PrecChunk> chunks;
-        if (!caseNumbers.isEmpty()) {
-            chunks = precChunkRepository.findNearestByEmbeddingAndCaseNumbers(queryEmbedding, caseNumbers, limit, offset);
-        } else if (!courtNames.isEmpty()) {
-            chunks = precChunkRepository.findNearestByEmbeddingAndCourtNames(queryEmbedding, courtNames, limit, offset);
-        } else {
-            chunks = precChunkRepository.findNearestByEmbedding(queryEmbedding, limit, offset);
-        }
-
-        List<PrecChunkResponseItem> list = chunks.stream()
-                .map(PrecChunkResponseItem::new)
-                .toList();
-
-        return PrecResponse.builder()
-                .list(list)
-                .currentPage(pageable.getPageNumber() + 1)
-                .totalPages(estimateVectorTotalPages(chunks.size(), limit, pageable.getPageNumber()))
-                .totalElements((long) chunks.size())
-                .build();
-    }
 
     public PrecResponse getPrecs(Pageable pageable) {
         Page<PrecChunk> precs = precChunkRepository.findAll(pageable);
