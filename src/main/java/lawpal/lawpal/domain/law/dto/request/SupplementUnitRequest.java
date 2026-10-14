@@ -1,6 +1,8 @@
 package lawpal.lawpal.domain.law.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import lawpal.lawpal.domain.law.NestedTextListDeserializer;
 import lawpal.lawpal.domain.law.entity.LawSupplement;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,6 +25,7 @@ public class SupplementUnitRequest {
     private String proclamationDate;
 
     @JsonProperty("부칙내용")
+    @JsonDeserialize(using = NestedTextListDeserializer.class)
     private  List<List<String>> content;
 
 }
