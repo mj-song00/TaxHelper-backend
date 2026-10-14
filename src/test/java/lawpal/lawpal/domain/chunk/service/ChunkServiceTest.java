@@ -45,7 +45,6 @@ class ChunkServiceTest {
     @Mock ChunkRepository chunkRepository;
     @Mock PrecedentRepository precedentRepository;
     @Mock PrecChunkRepository precChunkRepository;
-    @Mock OpenAiEmbeddingService openAiEmbeddingService;
 
     @InjectMocks ChunkService chunkService;
 

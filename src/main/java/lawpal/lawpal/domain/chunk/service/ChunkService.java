@@ -45,7 +45,6 @@ public class ChunkService {
     private final ChunkRepository chunkRepository;
     private final PrecedentRepository precedentRepository;
     private final PrecChunkRepository precChunkRepository;
-    private final OpenAiEmbeddingService openAiEmbeddingService;
 
 
     public void createChunks() {
@@ -148,32 +147,6 @@ public class ChunkService {
         }
 
         chunkRepository.saveAll(chunks);
-        chunkRepository.flush();
-        fillChunkEmbeddings(chunks);
-    }
-
-
-
-    private void fillChunkEmbeddings(List<Chunk> chunks) {
-        for (Chunk chunk : chunks) {
-            String embedding = openAiEmbeddingService.embedAsVectorLiteral(
-                    chunk.getTitle() + "\n" + chunk.getContent()
-            );
-            if (embedding != null) {
-                chunkRepository.updateEmbedding(chunk.getId(), embedding);
-            }
-        }
-    }
-
-    private void fillPrecChunkEmbeddings(List<PrecChunk> chunks) {
-        for (PrecChunk chunk : chunks) {
-            String embedding = openAiEmbeddingService.embedAsVectorLiteral(
-                    chunk.getTitle() + "\n" + chunk.getContent()
-            );
-            if (embedding != null) {
-                precChunkRepository.updateEmbedding(chunk.getId(), embedding);
-            }
-        }
     }
 
     public ChunkResponse getChunks(
@@ -760,8 +733,6 @@ public class ChunkService {
         }
 
         precChunkRepository.saveAll(chunks);
-        precChunkRepository.flush();
-        fillPrecChunkEmbeddings(chunks);
     }
 
     public PrecResponse getPrecs(
