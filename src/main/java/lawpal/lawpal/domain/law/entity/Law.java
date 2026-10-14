@@ -99,6 +99,7 @@ public class Law extends Timestamped {
     /**
      * 공동부령 정보
      */
+    @Column(columnDefinition = "text")
     private String jointMinistry;
 
     /**

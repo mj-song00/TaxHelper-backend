@@ -2,6 +2,7 @@ package lawpal.lawpal.domain.law.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -103,7 +104,14 @@ public class BasicInfo {
      * 공동부령정보
      */
     @JsonProperty("공동부령정보")
-    private String joinMinistry;
+    private JsonNode joinMinistry;
+
+    public String getJoinMinistry() {
+        if (joinMinistry == null || joinMinistry.isNull()) {
+            return null;
+        }
+        return joinMinistry.isTextual() ? joinMinistry.textValue() : joinMinistry.toString();
+    }
 
     /**
      * 공포법령여부
