@@ -25,6 +25,8 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
@@ -85,51 +87,63 @@ public class ChatJobService {
             }
             return new ChatJobCreateResponse(jobId, response.status());
         } catch (RestClientException | IllegalStateException exception) {
-            chatJob.markFailed(REGISTRATION_ERROR_MESSAGE);
-            chatJobRepository.save(chatJob);
-            log.error("[CHAT_JOB] job_id={} status=FAILED phase=registration", jobId, exception);
+            int changed = chatJobRepository.failIfStatusIn(jobId, Set.of(ChatJobStatus.PREPARING),
+                    REGISTRATION_ERROR_MESSAGE, LocalDateTime.now());
+            log.error("[CHAT_JOB] job_id={} phase=registration_failure changed={}", jobId, changed, exception);
             throw new ResponseStatusException(BAD_GATEWAY, REGISTRATION_ERROR_MESSAGE, exception);
         }
     }
 
     @Transactional
     public void savePrepared(UUID jobId, PreparedChatJobRequest request) {
-        ChatJob chatJob = getByJobId(jobId);
-        chatJob.updatePreparedData(request.context(), request.sources());
+        if (chatJobRepository.prepareIfPreparing(jobId, request.context(), request.sources(),
+                LocalDateTime.now()) == 0) {
+            ChatJobStatus status = getByJobId(jobId).getStatus();
+            if (status != ChatJobStatus.COMPLETED && status != ChatJobStatus.FAILED) {
+                throw new BaseException(INVALID_CHAT_JOB_STATUS);
+            }
+            return;
+        }
         log.info("[CHAT_JOB] job_id={} phase=prepared", jobId);
     }
 
     @Transactional
     public void markWaiting(UUID jobId) {
-        ChatJob chatJob = getByJobId(jobId);
-        chatJob.markWaiting();
+        if (chatJobRepository.waitingIfPreparing(jobId, LocalDateTime.now()) == 0) {
+            getByJobId(jobId); // Preserve 404; already advanced jobs are unchanged.
+            return;
+        }
         log.info("[CHAT_JOB] job_id={} status=WAITING", jobId);
     }
 
     @Transactional
     public void markProcessing(UUID jobId) {
-        ChatJob chatJob = getByJobId(jobId);
-        if (chatJob.getStatus() != ChatJobStatus.WAITING) {
+        if (chatJobRepository.processingIfWaiting(jobId, LocalDateTime.now()) == 0) {
+            getByJobId(jobId);
             throw new BaseException(INVALID_CHAT_JOB_STATUS);
         }
-        chatJob.markProcessing();
         log.info("[CHAT_JOB] job_id={} status=PROCESSING", jobId);
     }
 
     @Transactional
     public void markCompleted(UUID jobId, CompletedChatJobRequest request) {
-        ChatJob chatJob = getByJobId(jobId);
-        if (chatJob.getStatus() != ChatJobStatus.PROCESSING) {
-            throw new BaseException(INVALID_CHAT_JOB_STATUS);
+        if (chatJobRepository.completeIfProcessing(jobId, request.answer(), LocalDateTime.now()) == 0) {
+            ChatJobStatus status = getByJobId(jobId).getStatus();
+            if (status != ChatJobStatus.COMPLETED && status != ChatJobStatus.FAILED) {
+                throw new BaseException(INVALID_CHAT_JOB_STATUS);
+            }
+            return;
         }
-        chatJob.markCompleted(request.answer());
         log.info("[CHAT_JOB] job_id={} status=COMPLETED", jobId);
     }
 
     @Transactional
     public void markFailed(UUID jobId, String errorMessage) {
-        ChatJob chatJob = getByJobId(jobId);
-        chatJob.markFailed(errorMessage);
+        if (chatJobRepository.failIfStatusIn(jobId, Set.of(ChatJobStatus.PREPARING,
+                ChatJobStatus.WAITING, ChatJobStatus.PROCESSING), errorMessage, LocalDateTime.now()) == 0) {
+            getByJobId(jobId); // A terminal job keeps its original result and timestamps.
+            return;
+        }
         log.warn("[CHAT_JOB] job_id={} status=FAILED", jobId);
     }
 
